@@ -3,10 +3,8 @@ package com.example.Covoiturage.model;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "admins")
 @DiscriminatorValue("ADMIN")
 public class Admin extends User {
 
@@ -15,7 +13,7 @@ public class Admin extends User {
     public Admin(String email, String phone, String passwordHash) {
         super(email, phone, passwordHash);
     }
-
+/* 
     @Override
     public void suspendreCompte() {
         throw new UnsupportedOperationException(
@@ -26,5 +24,5 @@ public class Admin extends User {
     public void bloquerUtilisateur() {
         throw new UnsupportedOperationException(
             "Use AdminService.bloquerUtilisateur(userId) instead");
-    }
+    }*/
 }

@@ -8,4 +8,6 @@ import com.example.Covoiturage.model.Passager;
 
 public interface PassagerRepository extends JpaRepository<Passager, String> {
     Optional<Passager> findByEmail(String email);
+    Optional<Passager> findByPasseagerId(String id);
+
 }

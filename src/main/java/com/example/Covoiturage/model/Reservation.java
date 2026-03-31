@@ -64,7 +64,7 @@ public class Reservation {
         this.status = ReservationStatus.CONFIRMEE;
     }
 
-    public void annulerReservation(boolean isDriverCancel) {
+    public void annulerReservation() {
         this.status = ReservationStatus.ANNULEE;
     }
 

@@ -1,14 +1,18 @@
-package com.example.Covoiturage.service;
+package com.example.Covoiturage.service.impl;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.Covoiturage.exception.PaiementEchouéException;
 import com.example.Covoiturage.model.MoyenPaiement;
-import com.example.Covoiturage.model.Reservation;
 import com.example.Covoiturage.model.PaymentTransaction;
-import com.example.Covoiturage.repository.*;
+import com.example.Covoiturage.model.Reservation;
+import com.example.Covoiturage.repository.MoyenPaiementRepository;
+import com.example.Covoiturage.repository.PaymentTransactionRepository;
+import com.example.Covoiturage.repository.ReservationRepository;
+import com.example.Covoiturage.service.PaiementService;
 
 import jakarta.transaction.Transactional;
-
-import java.util.List;
-import com.example.Covoiturage.exception.*;
-import org.springframework.stereotype.Service;
 @Service
 public class PaiementServiceImpl implements PaiementService {
     private final ReservationRepository reservationRepository;
