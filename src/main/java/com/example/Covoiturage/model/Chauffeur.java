@@ -7,6 +7,10 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+
+
 
 @Entity
 @DiscriminatorValue("CHAUFFEUR")
@@ -16,6 +20,8 @@ public class Chauffeur extends User {
     private List<Vehicule> vehicules = new ArrayList<>();
 
     @OneToMany(mappedBy = "chauffeur", cascade = CascadeType.ALL)
+    @JsonManagedReference
+
     private List<Trajet> trajetsProposes = new ArrayList<>();
 
     private double noteMoyenne = 0.0;

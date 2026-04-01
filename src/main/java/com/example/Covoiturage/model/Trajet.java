@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.example.Covoiturage.model.enums.TrajetStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -31,6 +32,7 @@ public class Trajet {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chauffeur_id", nullable = false)
+    @JsonBackReference
     private Chauffeur chauffeur;
 
     @ManyToOne(fetch = FetchType.LAZY)

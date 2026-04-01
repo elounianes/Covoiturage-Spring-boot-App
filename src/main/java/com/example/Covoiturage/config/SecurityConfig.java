@@ -49,13 +49,20 @@ public class SecurityConfig {
     //   - your UserDetailsService (loads the user from DB)
     //   - your PasswordEncoder   (verifies the password)
     // Without this, Spring doesn't know which UserDetailsService
+ 
     // or PasswordEncoder to use during login.
+ 
+  
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
     provider.setPasswordEncoder(passwordEncoder());
     return provider;
 }
+
+  
+
+
 
     // ── AuthenticationManager ─────────────────────────────
     // Exposed as a @Bean so AuthController can inject it

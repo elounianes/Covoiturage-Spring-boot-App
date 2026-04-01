@@ -23,18 +23,12 @@ public class AuthController {
         this.authService=authService;
         this.userRepo=userRepo;
     }
-    // ── POST /api/auth/register 
-    // Frontend sends: { email, phone, password, role }
-    // Returns: { success, userId, email, role, status } JSON 
-
+  
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request){
         User user = authService.creerCompte(request.getEmail(),request.getPhone(),request.getPassword(),request.getRole());  
         return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.success(user.getId(),user.getEmail(),user.getRole().name(),user.getStatus().name()));
     }
-    //GET /api/auth/me
-    // Called by the frontend on page load to check if the user is still logged in and get their role for routing.
-    // If nobody is logged in, userDetails is null → returns 401.
     @GetMapping("/me")
     public ResponseEntity<AuthResponse>getCurrentUser(@AuthenticationPrincipal UserDetails userDetails){
         if(userDetails == null){
