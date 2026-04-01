@@ -25,7 +25,7 @@ public class AuthController {
     }
     // ── POST /api/auth/register 
     // Frontend sends: { email, phone, password, role }
-    // Returns: { success, userId, email, role, status }
+    // Returns: { success, userId, email, role, status } JSON 
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request){

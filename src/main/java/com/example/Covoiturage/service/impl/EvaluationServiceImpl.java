@@ -20,9 +20,9 @@ public class EvaluationServiceImpl implements EvaluationService{
     }
     @Override
     public void evaluerChauffeur(String chauffeurId, String passagerId, int note) {
-            Chauffeur chauffeur = chauffeurRepository.findByChauffeurId(chauffeurId)
+            Chauffeur chauffeur = chauffeurRepository.findById(chauffeurId)
             .orElseThrow(() -> new IllegalArgumentException("Chauffeur non trouvé"));
-            Passager passager = passagerRepository.findByPasseagerId(passagerId)
+            Passager passager = passagerRepository.findById(passagerId)
             .orElseThrow(() -> new IllegalArgumentException("Passager non trouvé"));   
             chauffeur.ajouterNote(note);
             chauffeurRepository.save(chauffeur);
@@ -30,7 +30,7 @@ public class EvaluationServiceImpl implements EvaluationService{
     }
     @Override
     public double consulterNotesChauffeur(String chauffeurId) {
-        Chauffeur chauffeur = chauffeurRepository.findByChauffeurId(chauffeurId)
+        Chauffeur chauffeur = chauffeurRepository.findById(chauffeurId)
             .orElseThrow(() -> new IllegalArgumentException("Chauffeur non trouvé"));
         return chauffeur.consulterNotesChauffeur();
     }
@@ -41,9 +41,9 @@ public class EvaluationServiceImpl implements EvaluationService{
         if (note < 1 || note > 5)
             throw new IllegalArgumentException("La note doit être entre 1 et 5");
 
-        Passager passager = passagerRepository.findByPasseagerId(passagerId)
+        Passager passager = passagerRepository.findById(passagerId)
             .orElseThrow(() -> new IllegalArgumentException("Passager non trouvé"));
-        Chauffeur chauffeur = chauffeurRepository.findByChauffeurId(chauffeurId)
+        Chauffeur chauffeur = chauffeurRepository.findById(chauffeurId)
             .orElseThrow(() -> new IllegalArgumentException("Chauffeur non trouvé"));
         notificationService.notfierUser(passager,"Évaluation reçue","Le chauffeur " + chauffeur.getEmail() + " vous a donné une note de " + note + "/5.");
     }

@@ -67,6 +67,7 @@ public class SecurityConfig {
     }
 
     // ── Main security filter chain ────────────────────────
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
@@ -87,6 +88,7 @@ public class SecurityConfig {
                 // Public endpoints — no login required
                 .requestMatchers(
                     "/api/auth/**",   // register, login, logout
+                    "/actuator/**", // test POSTMAN
                     "/api/trajets/disponibles", // browse page is public
                     "/h2-console/**"  // remove this in production
                 ).permitAll()

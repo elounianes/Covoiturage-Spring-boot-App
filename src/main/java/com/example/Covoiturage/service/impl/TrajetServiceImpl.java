@@ -1,12 +1,20 @@
 package com.example.Covoiturage.service.impl;
-import org.springframework.stereotype.Service;
-import com.example.Covoiturage.repository.*;
-import com.example.Covoiturage.model.*;
-import com.example.Covoiturage.model.enums.*;
-import com.example.Covoiturage.service.NotificationService;
-import com.example.Covoiturage.service.TrajetService;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.Covoiturage.model.Chauffeur;
+import com.example.Covoiturage.model.Reservation;
+import com.example.Covoiturage.model.Trajet;
+import com.example.Covoiturage.model.Vehicule;
+import com.example.Covoiturage.model.enums.ReservationStatus;
+import com.example.Covoiturage.model.enums.TrajetStatus;
+import com.example.Covoiturage.repository.ChauffeurRepository;
+import com.example.Covoiturage.repository.ReservationRepository;
+import com.example.Covoiturage.repository.TrajetRepository;
+import com.example.Covoiturage.service.NotificationService;
+import com.example.Covoiturage.service.TrajetService;
 @Service
 public class TrajetServiceImpl implements TrajetService{
 

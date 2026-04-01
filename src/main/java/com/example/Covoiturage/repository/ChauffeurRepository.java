@@ -8,5 +8,5 @@ import com.example.Covoiturage.model.Chauffeur;
 
 public interface ChauffeurRepository extends JpaRepository<Chauffeur, String> {
     Optional<Chauffeur> findByEmail(String email);
-    Optional<Chauffeur> findByChauffeurId(String id);
+    Optional<Chauffeur> findById(String id);
 }
