@@ -2,6 +2,8 @@ package com.example.Covoiturage.model;
 
 import com.example.Covoiturage.model.enums.UserRole;
 import com.example.Covoiturage.model.enums.UserStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
@@ -16,6 +18,8 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
+
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -31,6 +35,7 @@ public abstract class User {
 
     private String phone;
 
+    @JsonIgnore 
     @Column(nullable = false)
     private String passwordHash;
 
@@ -86,15 +91,7 @@ public abstract class User {
     public void deconnecter() {
         System.out.println("[AUTH] Déconnexion de " + email);
     }
-/* 
-    public void notifierEmail(String message) {
-        System.out.println("[EMAIL → " + email + "] " + message);
-    }
 
-    public void notifierSMS(String message) {
-        System.out.println("[SMS → " + phone + "] " + message);
-    }
-*/
     public boolean isActif() {
         return this.status == UserStatus.ACTIF;
     }

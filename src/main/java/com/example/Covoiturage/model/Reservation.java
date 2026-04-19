@@ -3,6 +3,8 @@ package com.example.Covoiturage.model;
 import java.time.LocalDateTime;
 
 import com.example.Covoiturage.model.enums.ReservationStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -19,6 +21,8 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "reservations")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Reservation {
 
     @Id
@@ -27,10 +31,18 @@ public class Reservation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trajet_id", nullable = false)
+    @JsonIgnoreProperties({
+    "reservations",          // breaks Reservation→Trajet→Reservation
+    "chauffeur",             // not needed when embedded in Reservation
+    "hibernateLazyInitializer",
+    "handler"
+})
     private Trajet trajet;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "passager_id", nullable = false)
+    @JsonIgnore
+
     private Passager passager;
 
     private int nombrePlaces;
@@ -88,6 +100,9 @@ public class Reservation {
     public LocalDateTime getDateReservation() { return dateReservation; }
     public PaymentTransaction getTransaction() { return transaction; }
     public void setTransaction(PaymentTransaction transaction) { this.transaction = transaction; }
+    public String getPassagerEmail() {
+    return passager != null ? passager.getEmail() : null;
+}
 
     @Override
     public boolean equals(Object o) {

@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -11,6 +14,8 @@ import jakarta.persistence.OneToMany;
 
 @Entity
 @DiscriminatorValue("PASSAGER")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Passager extends User {
 
     @OneToMany(mappedBy = "passager", cascade = CascadeType.ALL, orphanRemoval = true)

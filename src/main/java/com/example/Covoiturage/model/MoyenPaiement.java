@@ -1,4 +1,7 @@
 package com.example.Covoiturage.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +13,8 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "moyens_paiement")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class MoyenPaiement {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -20,6 +25,7 @@ public class MoyenPaiement {
     private String dateExpiration;
     private String titulaire;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "passager_id")
     private Passager passager;

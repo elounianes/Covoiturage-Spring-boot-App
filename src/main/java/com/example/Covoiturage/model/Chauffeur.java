@@ -3,22 +3,28 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 
 
 
 @Entity
 @DiscriminatorValue("CHAUFFEUR")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Chauffeur extends User {
 
     @OneToMany(mappedBy = "proprietaire", cascade = CascadeType.ALL)
     private List<Vehicule> vehicules = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "chauffeur", cascade = CascadeType.ALL)
     @JsonManagedReference
 

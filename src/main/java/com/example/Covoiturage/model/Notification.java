@@ -4,8 +4,12 @@ package com.example.Covoiturage.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "notifications")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Notification {
 
     @Id

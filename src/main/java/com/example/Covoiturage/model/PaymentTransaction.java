@@ -2,6 +2,8 @@ package com.example.Covoiturage.model;
 import java.time.LocalDateTime;
 
 import com.example.Covoiturage.model.enums.PaymentStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +16,8 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "payment_transactions")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class PaymentTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,6 +30,7 @@ public class PaymentTransaction {
 
     private LocalDateTime dateTransaction;
 
+    @JsonIgnore 
     @OneToOne(mappedBy = "transaction")
     private Reservation reservation;
 

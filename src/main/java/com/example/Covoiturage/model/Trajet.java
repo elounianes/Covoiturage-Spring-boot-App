@@ -7,6 +7,8 @@ import java.util.List;
 
 import com.example.Covoiturage.model.enums.TrajetStatus;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -24,6 +26,8 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "trajets")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Trajet {
 
     @Id
@@ -33,6 +37,15 @@ public class Trajet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chauffeur_id", nullable = false)
     @JsonBackReference
+    @JsonIgnoreProperties({
+    "trajetsProposes",       
+    "vehicules",             
+    "historiqueReservations",
+    "moyensPaiement",
+    "passwordHash",
+    "hibernateLazyInitializer",
+    "handler"
+})
     private Chauffeur chauffeur;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -55,6 +68,7 @@ public class Trajet {
     @Enumerated(EnumType.STRING)
     private TrajetStatus status = TrajetStatus.PREVU;
 
+    @JsonIgnore   
     @OneToMany(mappedBy = "trajet", cascade = CascadeType.ALL)
     private List<Reservation> reservations = new ArrayList<>();
 
