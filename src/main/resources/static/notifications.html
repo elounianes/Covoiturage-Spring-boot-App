@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ride With Me — Notifications</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main style="padding-bottom: 64px;">
+  <div class="container" style="max-width: 760px;">
+
+    <div class="page-header">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2>Notifications</h2>
+          <p>Vos alertes et messages récents</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="markAllRead()">
+          Tout marquer comme lu
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-all"
+              onclick="filterNotifs('all')">Toutes</button>
+      <button class="tab-btn" id="tab-unread"
+              onclick="filterNotifs('unread')">Non lues
+        <span id="unread-count" class="badge badge-amber"
+              style="font-size:0.7rem; margin-left:4px;"></span>
+      </button>
+    </div>
+
+    <div id="notif-list" style="display:flex; flex-direction:column; gap:10px;">
+      <!-- Populated by renderNotifs() -->
+    </div>
+
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  let allNotifs = [];
+  let currentFilter = 'all';
+
+  (async () => {
+    const user = await requireAuth();
+    if (!user) return;
+
+    renderNavbar(user, 'notifs');
+    await loadNotifs();
+  })();
+
+  async function loadNotifs() {
+    showLoading('notif-list');
+    const result = await Notifications.all();
+
+    if (!result.success) {
+      document.getElementById('notif-list').innerHTML =
+        `<div class="alert alert-error">${result.error}</div>`;
+      return;
+    }
+
+    allNotifs = Array.isArray(result.data) ? result.data : [];
+    updateUnreadCount();
+    renderNotifs();
+  }
+
+  function updateUnreadCount() {
+    const count = allNotifs.filter(n => !n.lu).length;
+    const badge = document.getElementById('unread-count');
+    badge.textContent = count > 0 ? count : '';
+    badge.style.display = count > 0 ? 'inline-flex' : 'none';
+  }
+
+  function filterNotifs(filter) {
+    currentFilter = filter;
+    document.getElementById('tab-all').classList.toggle('active', filter === 'all');
+    document.getElementById('tab-unread').classList.toggle('active', filter === 'unread');
+    renderNotifs();
+  }
+
+  function renderNotifs() {
+    const filtered = currentFilter === 'unread'
+      ? allNotifs.filter(n => !n.lu)
+      : allNotifs;
+
+    const list = document.getElementById('notif-list');
+
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔔</div>
+          <h3>${currentFilter === 'unread' ? 'Tout lu !' : 'Aucune notification'}</h3>
+          <p>Vous êtes à jour.</p>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = filtered.map(n => `
+      <div class="notif-item ${n.lu ? '' : 'unread'}" id="notif-${n.id}"
+           onclick="markRead('${n.id}', ${n.lu})" style="cursor:pointer;">
+        <div class="notif-dot ${n.lu ? 'read' : ''}"></div>
+        <div class="notif-content">
+          <div class="notif-title">${n.message?.split('—')[0] || 'Notification'}</div>
+          <div class="notif-msg">${n.message || ''}</div>
+          <div class="notif-time">
+            ${n.type === 'EMAIL' ? '📧' : '📱'} ${n.type}
+            &nbsp;·&nbsp;
+            ${formatDateShort(n.dateEnvoi)}
+          </div>
+        </div>
+        ${!n.lu ? `<span class="badge badge-amber" style="flex-shrink:0;">Nouveau</span>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // Mark a single notification as read when clicked
+  async function markRead(id, alreadyRead) {
+    if (alreadyRead) return;
+    const result = await Notifications.lire(id);
+    if (result.success) {
+      // Update locally without re-fetching — faster UX
+      const notif = allNotifs.find(n => n.id === id);
+      if (notif) notif.lu = true;
+      updateUnreadCount();
+      renderNotifs();
+    }
+  }
+
+  // Mark all unread notifications as read
+  async function markAllRead() {
+    const unread = allNotifs.filter(n => !n.lu);
+    if (unread.length === 0) { toast('Tout est déjà lu !', 'info'); return; }
+
+    // Call the API for each unread notification
+    await Promise.all(unread.map(n => Notifications.lire(n.id)));
+    toast(`${unread.length} notification(s) marquée(s) comme lue(s)`, 'success');
+    await loadNotifs();
+  }
+</script>
+</body>
+</html>

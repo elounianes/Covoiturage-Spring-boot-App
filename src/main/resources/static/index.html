@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ride With Me — Connexion</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Page-specific styles ── */
+    body {
+      /* Subtle grid pattern background for depth */
+      background-image: radial-gradient(circle at 1px 1px, var(--border-soft) 1px, transparent 0);
+      background-size: 32px 32px;
+    }
+
+    .auth-wrapper {
+      min-height: 100vh;
+      display: grid;
+      /* Left side: branding panel | Right side: form */
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* ── Left branding panel ── */
+    .brand-panel {
+      background: linear-gradient(145deg, #0f1420 0%, #13161e 100%);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 64px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Decorative glowing circle behind the hero text */
+    .brand-panel::before {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(245,166,35,0.08) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .brand-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 48px;
+    }
+    .brand-logo span { color: var(--amber); }
+
+    .brand-headline {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+    .brand-headline .highlight {
+      color: var(--amber);
+      display: block;
+    }
+
+    .brand-sub {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.7;
+      max-width: 340px;
+      margin-bottom: 48px;
+    }
+
+    /* Stats row at the bottom of the brand panel */
+    .brand-stats {
+      display: flex;
+      gap: 32px;
+    }
+    .brand-stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--amber);
+    }
+    .brand-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Right form panel ── */
+    .form-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .auth-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .auth-sub {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 32px;
+    }
+
+    /* Tab switcher between Login and Register */
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      background: var(--bg-input);
+      padding: 4px;
+      border-radius: var(--radius);
+      margin-bottom: 28px;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 7px;
+      transition: var(--transition);
+      text-align: center;
+    }
+    .auth-tab.active {
+      background: var(--bg-card);
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .auth-form { display: flex; flex-direction: column; gap: 16px; }
+
+    /* The register form is hidden by default and shown via JS */
+    #register-form { display: none; }
+
+    .role-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .role-option { display: none; } /* hide the real radio input */
+    .role-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .role-label:hover { border-color: var(--amber); color: var(--text); }
+    .role-option:checked + .role-label {
+      border-color: var(--amber);
+      background: var(--amber-glow);
+      color: var(--amber);
+    }
+    .role-icon { font-size: 1.4rem; }
+
+    /* Error/success messages below form */
+    #auth-message { display: none; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- Two-column auth layout                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="auth-wrapper">
+
+  <!-- ── Left: Branding ────────────────────────────────── -->
+  <div class="brand-panel">
+    <div class="brand-logo">Ride <span>With Me</span></div>
+
+    <h1 class="brand-headline">
+      Voyagez
+      <span class="highlight">ensemble,</span>
+      dépensez moins.
+    </h1>
+
+    <p class="brand-sub">
+      La plateforme de covoiturage qui connecte
+      passagers et chauffeurs pour des trajets
+      plus économiques et plus humains.
+    </p>
+
+    <div class="brand-stats">
+      <div>
+        <div class="brand-stat-value">12k+</div>
+        <div class="brand-stat-label">Utilisateurs actifs</div>
+      </div>
+      <div>
+        <div class="brand-stat-value">98%</div>
+        <div class="brand-stat-label">Satisfaction</div>
+      </div>
+      <div>
+        <div class="brand-stat-value">50+</div>
+        <div class="brand-stat-label">Villes desservies</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right: Form ────────────────────────────────────── -->
+  <div class="form-panel">
+    <div class="auth-box">
+      <p class="auth-title">Bonjour 👋</p>
+      <p class="auth-sub">Connectez-vous ou créez votre compte</p>
+
+      <!-- Tab switcher -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login"
+                onclick="switchTab('login')">Connexion</button>
+        <button class="auth-tab" id="tab-register"
+                onclick="switchTab('register')">Inscription</button>
+      </div>
+
+      <!-- ── Login Form ── -->
+      <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Adresse email</label>
+          <input class="form-input" type="email" id="login-email"
+                 placeholder="vous@exemple.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input class="form-input" type="password" id="login-password"
+                 placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <!-- Error / success message area -->
+        <div id="auth-message"></div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg"
+                id="login-btn">
+          Se connecter
+        </button>
+      </form>
+
+      <!-- ── Register Form ── -->
+      <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label class="form-label">Adresse email</label>
+          <input class="form-input" type="email" id="reg-email"
+                 placeholder="vous@exemple.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input class="form-input" type="tel" id="reg-phone"
+                 placeholder="06 00 00 00 00" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input class="form-input" type="password" id="reg-password"
+                 placeholder="Minimum 6 caractères" required minlength="6">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Je suis un(e)</label>
+          <!-- Custom radio buttons styled as cards -->
+          <div class="role-selector">
+            <input class="role-option" type="radio" name="role"
+                   id="role-passager" value="PASSAGER" checked>
+            <label class="role-label" for="role-passager">
+              <span class="role-icon">🧳</span>
+              Passager
+            </label>
+
+            <input class="role-option" type="radio" name="role"
+                   id="role-chauffeur" value="CHAUFFEUR">
+            <label class="role-label" for="role-chauffeur">
+              <span class="role-icon">🚗</span>
+              Chauffeur
+            </label>
+
+            <input class="role-option" type="radio" name="role"
+                   id="role-admin" value="ADMIN">
+            <label class="role-label" for="role-admin">
+              <span class="role-icon">🛡️</span>
+              Admin
+            </label>
+          </div>
+        </div>
+
+        <div id="auth-message"></div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg"
+                id="register-btn">
+          Créer mon compte
+        </button>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // ── On page load: if already logged in, redirect ──────
+  // This prevents a logged-in user from seeing the login page again.
+  (async () => {
+    const result = await Auth.me();
+    if (result.success) {
+      saveSession(result.data);
+      redirectToHome(result.data.role?.replace('ROLE_', ''));
+    }
+  })();
+
+  // ── Tab switcher ──────────────────────────────────────
+  // Shows/hides the login or register form
+  function switchTab(tab) {
+    document.getElementById('login-form').style.display =
+      tab === 'login' ? 'flex' : 'none';
+    document.getElementById('register-form').style.display =
+      tab === 'register' ? 'flex' : 'none';
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+    // Clear any previous error messages
+    document.querySelectorAll('#auth-message').forEach(el => {
+      el.style.display = 'none';
+      el.innerHTML = '';
+    });
+  }
+
+  // ── Show message under form ───────────────────────────
+  function showMessage(message, type = 'error') {
+    // Find the message div in the currently visible form
+    const activeForm = document.getElementById('login-form').style.display !== 'none'
+      ? 'login-form' : 'register-form';
+    const msgEl = document.querySelector(`#${activeForm} #auth-message`);
+    if (msgEl) {
+      msgEl.style.display = 'flex';
+      msgEl.className = `alert alert-${type}`;
+      msgEl.innerHTML = message;
+    }
+  }
+
+  // ── Login handler ─────────────────────────────────────
+  async function handleLogin(e) {
+    e.preventDefault(); // prevent default form submission
+
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Connexion...';
+
+    const email    = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    const result = await Auth.login(email, password);
+
+    if (result.success) {
+      // Save user info and go to the right dashboard
+      const me = await Auth.me();
+      if (me.success) {
+        saveSession(me.data);
+        redirectToHome(me.data.role?.replace('ROLE_', ''));
+      }
+    } else {
+      showMessage(result.error);
+      btn.disabled = false;
+      btn.innerHTML = 'Se connecter';
+    }
+  }
+
+  // ── Register handler ──────────────────────────────────
+  async function handleRegister(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('register-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Création...';
+
+    const email    = document.getElementById('reg-email').value;
+    const phone    = document.getElementById('reg-phone').value;
+    const password = document.getElementById('reg-password').value;
+    const role     = document.querySelector('input[name="role"]:checked').value;
+
+    const result = await Auth.register(email, phone, password, role);
+
+    if (result.success) {
+      showMessage('Compte créé ! Vous pouvez maintenant vous connecter.', 'success');
+      // Pre-fill the login form with the just-registered email
+      document.getElementById('login-email').value = email;
+      setTimeout(() => switchTab('login'), 1500);
+    } else {
+      showMessage(result.error);
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Créer mon compte';
+  }
+</script>
+</body>
+</html>

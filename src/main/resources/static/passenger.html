@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ride With Me — Mon espace passager</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .res-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: var(--transition);
+    }
+    .res-card:hover { border-color: var(--border-soft); }
+
+    .res-route {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .res-route .arrow { color: var(--amber); }
+
+    .res-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .res-meta span { display: flex; align-items: center; gap: 5px; }
+
+    .res-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .res-price {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--amber);
+    }
+
+    .cancel-confirm {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 8px;
+      display: none;
+    }
+    .cancel-confirm p {
+      font-size: 0.875rem;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .cancel-confirm .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+<main style="padding-bottom: 64px;">
+  <div class="container">
+
+    <!-- ── Page Header ───────────────────────────────── -->
+    <div class="page-header">
+      <h2>Mes réservations</h2>
+      <p>Gérez vos trajets et consultez votre historique</p>
+    </div>
+
+    <!-- ── Stats row ──────────────────────────────────── -->
+    <div class="grid-4 mb-lg" id="stats-row">
+      <!-- Populated by renderStats() -->
+    </div>
+
+    <!-- ── Tabs: Active / History ─────────────────────── -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-active"
+              onclick="switchTab('active')">En cours</button>
+      <button class="tab-btn" id="tab-history"
+              onclick="switchTab('history')">Historique</button>
+    </div>
+
+    <!-- Reservations grid -->
+    <div id="reservations-grid" class="grid-auto">
+      <!-- Populated by renderReservations() -->
+    </div>
+
+    <!-- Quick link to browse -->
+    <div style="text-align:center; margin-top: 40px;">
+      <a href="browse.html" class="btn btn-primary">
+        Rechercher un trajet
+      </a>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  let allReservations = [];
+  let currentTab = 'active';
+
+  // ── Init ──────────────────────────────────────────────
+  (async () => {
+    // requireRole ensures only PASSAGER can access this page.
+    // If not logged in → login page. If CHAUFFEUR/ADMIN → their page.
+    const user = await requireRole(['PASSAGER']);
+    if (!user) return;
+
+    renderNavbar(user, 'dashboard');
+    await loadReservations();
+  })();
+
+  // ── Load reservations from API ─────────────────────────
+  async function loadReservations() {
+    showLoading('reservations-grid');
+    const result = await Reservations.mesReservations();
+
+    if (!result.success) {
+      document.getElementById('reservations-grid').innerHTML =
+        `<div class="alert alert-error" style="grid-column:1/-1">${result.error}</div>`;
+      return;
+    }
+
+    allReservations = Array.isArray(result.data) ? result.data : [result.data];
+    renderStats();
+    renderReservations();
+  }
+
+  // ── Stats row ─────────────────────────────────────────
+  function renderStats() {
+    const total    = allReservations.length;
+    const active   = allReservations.filter(r =>
+      ['CONFIRMEE', 'EN_ATTENTE'].includes(r.status)).length;
+    const spent    = allReservations
+      .filter(r => r.status === 'CONFIRMEE')
+      .reduce((sum, r) => sum + r.prixTotal, 0);
+    const cancelled = allReservations.filter(r => r.status === 'ANNULEE').length;
+
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon">🎫</div>
+        <div class="stat-label">Total réservations</div>
+        <div class="stat-value">${total}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label">En cours</div>
+        <div class="stat-value">${active}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💶</div>
+        <div class="stat-label">Total dépensé</div>
+        <div class="stat-value">${spent.toFixed(0)} €</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">❌</div>
+        <div class="stat-label">Annulées</div>
+        <div class="stat-value">${cancelled}</div>
+      </div>
+    `;
+  }
+
+  // ── Tab switch ─────────────────────────────────────────
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tab-active').classList.toggle('active', tab === 'active');
+    document.getElementById('tab-history').classList.toggle('active', tab === 'history');
+    renderReservations();
+  }
+
+  // ── Render reservation cards ───────────────────────────
+  function renderReservations() {
+    // Filter based on current tab
+    const activeStatuses = ['CONFIRMEE', 'EN_ATTENTE'];
+    const filtered = currentTab === 'active'
+      ? allReservations.filter(r => activeStatuses.includes(r.status))
+      : allReservations.filter(r => !activeStatuses.includes(r.status));
+
+    const grid = document.getElementById('reservations-grid');
+
+    if (filtered.length === 0) {
+      const msg = currentTab === 'active'
+        ? 'Aucune réservation active pour le moment.'
+        : 'Aucun historique de réservation.';
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div class="empty-icon">${currentTab === 'active' ? '🗺️' : '📜'}</div>
+          <h3>Rien ici</h3>
+          <p>${msg}</p>
+          <a href="browse.html" class="btn btn-secondary mt-md">
+            Voir les trajets disponibles
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(r => `
+      <div class="res-card" id="res-${r.id}">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div class="res-route">
+            <span>${r.trajet?.origine || '?'}</span>
+            <span class="arrow">→</span>
+            <span>${r.trajet?.destination || '?'}</span>
+          </div>
+          ${statusBadge(r.status)}
+        </div>
+
+        <div class="res-meta">
+          <span>📅 ${formatDateShort(r.trajet?.heureDepart)}</span>
+          <span>💺 ${r.nombrePlaces} place${r.nombrePlaces > 1 ? 's' : ''}</span>
+          <span>🧾 Réservé le ${formatDateShort(r.dateReservation)}</span>
+        </div>
+
+        ${r.transaction ? `
+          <div style="font-size:0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+            Paiement ${statusBadge(r.transaction.status)}
+          </div>
+        ` : ''}
+
+        <div class="res-footer">
+          <div class="res-price">${r.prixTotal?.toFixed(2)} €</div>
+
+          <!-- Only show cancel button for active reservations -->
+          ${['CONFIRMEE','EN_ATTENTE'].includes(r.status) ? `
+            <button class="btn btn-danger btn-sm"
+                    onclick="showCancelConfirm('${r.id}')">
+              Annuler
+            </button>
+          ` : ''}
+        </div>
+
+        <!-- Cancel confirmation panel — hidden by default -->
+        <div class="cancel-confirm" id="cancel-${r.id}">
+          <p>
+            ⚠️ Êtes-vous sûr ? Si le départ est dans moins de 24h,
+            seulement <strong>50%</strong> vous sera remboursé.
+          </p>
+          <div class="btn-row">
+            <button class="btn btn-danger btn-sm"
+                    onclick="confirmCancel('${r.id}')">
+              Oui, annuler
+            </button>
+            <button class="btn btn-ghost btn-sm"
+                    onclick="hideCancelConfirm('${r.id}')">
+              Non, garder
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Cancel flow ────────────────────────────────────────
+  // Show the confirmation panel (two-step cancel for safety)
+  function showCancelConfirm(id) {
+    document.getElementById(`cancel-${id}`).style.display = 'block';
+  }
+
+  function hideCancelConfirm(id) {
+    document.getElementById(`cancel-${id}`).style.display = 'none';
+  }
+
+  // Actually call the API to cancel
+  async function confirmCancel(id) {
+    const result = await Reservations.annuler(id);
+
+    if (result.success) {
+      toast('Réservation annulée — remboursement traité', 'success');
+      await loadReservations();
+    } else {
+      // AnnulationHorsDelaiException still means the cancel happened
+      // but with a partial refund — show as warning not error
+      if (result.error?.includes('partiel') || result.error?.includes('24h')) {
+        toast('Annulé avec remboursement partiel (50%)', 'info');
+        await loadReservations();
+      } else {
+        toast(result.error, 'error');
+      }
+    }
+  }
+</script>
+</body>
+</html>

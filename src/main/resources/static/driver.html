@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ride With Me — Tableau de bord chauffeur</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .trip-row {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      transition: var(--transition);
+    }
+    .trip-row:hover { border-color: var(--border-soft); }
+    .trip-row-route {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      flex: 1;
+      min-width: 180px;
+    }
+    .trip-row-meta {
+      display: flex;
+      gap: 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .trip-row-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .res-mini {
+      background: var(--bg-input);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.875rem;
+    }
+    .note-stars { color: var(--amber); font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+<main style="padding-bottom: 64px;">
+  <div class="container">
+
+    <div class="page-header">
+      <h2>Tableau de bord</h2>
+      <p>Gérez vos trajets, véhicules et réservations</p>
+    </div>
+
+    <!-- ── Stats ──────────────────────────────────────── -->
+    <div class="grid-4 mb-lg" id="stats-row"></div>
+
+    <!-- ── Tabs ───────────────────────────────────────── -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-trajets"
+              onclick="switchTab('trajets')">Mes trajets</button>
+      <button class="tab-btn" id="tab-vehicules"
+              onclick="switchTab('vehicules')">Mes véhicules</button>
+      <button class="tab-btn" id="tab-reservations"
+              onclick="switchTab('reservations')">Réservations reçues</button>
+    </div>
+
+    <div id="tab-content"></div>
+  </div>
+</main>
+
+<!-- ── Add Trip Modal ─────────────────────────────────── -->
+<div class="modal-overlay" id="trip-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Proposer un trajet</h3>
+      <button class="modal-close" onclick="closeModal('trip-modal')">✕</button>
+    </div>
+    <form onsubmit="createTrip(event)">
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Départ</label>
+            <input class="form-input" type="text" id="t-origine"
+                   placeholder="Ex: Tunis" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destination</label>
+            <input class="form-input" type="text" id="t-destination"
+                   placeholder="Ex: Sfax" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date et heure de départ</label>
+          <input class="form-input" type="datetime-local" id="t-heure" required>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Places disponibles</label>
+            <input class="form-input" type="number" id="t-places"
+                   min="1" max="8" placeholder="Ex: 3" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prix par place (€)</label>
+            <input class="form-input" type="number" id="t-prix"
+                   min="0" step="0.5" placeholder="Ex: 15" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Véhicule</label>
+          <div class="select-wrapper">
+            <select class="form-input" id="t-vehicule" required>
+              <option value="">Sélectionnez un véhicule</option>
+            </select>
+          </div>
+        </div>
+        <div id="trip-form-msg" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="trip-submit-btn">
+          Publier le trajet
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Add Vehicle Modal ─────────────────────────────── -->
+<div class="modal-overlay" id="vehicule-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Ajouter un véhicule</h3>
+      <button class="modal-close" onclick="closeModal('vehicule-modal')">✕</button>
+    </div>
+    <form onsubmit="addVehicule(event)">
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Marque</label>
+            <input class="form-input" type="text" id="v-marque"
+                   placeholder="Ex: Toyota" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Modèle</label>
+            <input class="form-input" type="text" id="v-modele"
+                   placeholder="Ex: Corolla" required>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Capacité max</label>
+            <input class="form-input" type="number" id="v-capacite"
+                   min="1" max="9" placeholder="Ex: 4" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plaque d'immatriculation</label>
+            <input class="form-input" type="text" id="v-plaque"
+                   placeholder="Ex: AB-123-CD" required>
+          </div>
+        </div>
+        <div id="vehicule-form-msg" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="vehicule-submit-btn">
+          Ajouter le véhicule
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Reservations Panel Modal ───────────────────────── -->
+<div class="modal-overlay" id="res-modal">
+  <div class="modal" style="max-width: 560px;">
+    <div class="modal-header">
+      <h3 id="res-modal-title">Réservations du trajet</h3>
+      <button class="modal-close" onclick="closeModal('res-modal')">✕</button>
+    </div>
+    <div id="res-modal-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  let vehicules = [];
+  let trajets   = [];
+  let currentTab = 'trajets';
+
+  (async () => {
+    const user = await requireRole(['CHAUFFEUR']);
+    if (!user) return;
+
+    renderNavbar(user, 'dashboard');
+    await Promise.all([loadStats(), loadTrajets(), loadVehicules()]);
+  })();
+
+  // ── Load stats ─────────────────────────────────────────
+  async function loadStats() {
+    const [trajetsRes, notesRes, vehiculesRes] = await Promise.all([
+      Trajets.mesTrajets(),
+      Chauffeur.notes(),
+      Chauffeur.vehicules()
+    ]);
+
+    const trips     = Array.isArray(trajetsRes.data) ? trajetsRes.data : [];
+    const note      = notesRes.data ?? 0;
+    const vCount    = Array.isArray(vehiculesRes.data) ? vehiculesRes.data.length : 0;
+    const actifs    = trips.filter(t => t.status === 'PREVU').length;
+
+    const stars = '★'.repeat(Math.round(note)) + '☆'.repeat(5 - Math.round(note));
+
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon">🛣️</div>
+        <div class="stat-label">Trajets proposés</div>
+        <div class="stat-value">${trips.length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🟢</div>
+        <div class="stat-label">Trajets actifs</div>
+        <div class="stat-value">${actifs}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🚗</div>
+        <div class="stat-label">Véhicules</div>
+        <div class="stat-value">${vCount}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-label">Note moyenne</div>
+        <div class="stat-value">${note.toFixed(1)}</div>
+      </div>
+    `;
+  }
+
+  // ── Load trips ─────────────────────────────────────────
+  async function loadTrajets() {
+    const result = await Trajets.mesTrajets();
+    trajets = Array.isArray(result.data) ? result.data : [];
+    if (currentTab === 'trajets') renderTrajetsTab();
+  }
+
+  // ── Load vehicles ──────────────────────────────────────
+  async function loadVehicules() {
+    const result = await Chauffeur.vehicules();
+    vehicules = Array.isArray(result.data) ? result.data : [];
+    updateVehiculeSelect();
+    if (currentTab === 'vehicules') renderVehiculesTab();
+  }
+
+  // ── Populate vehicle dropdown in trip modal ────────────
+  function updateVehiculeSelect() {
+    const sel = document.getElementById('t-vehicule');
+    sel.innerHTML = '<option value="">Sélectionnez un véhicule</option>' +
+      vehicules.map(v =>
+        `<option value="${v.id}">${v.marque} ${v.modele} (${v.plaqueImmatriculation})</option>`
+      ).join('');
+  }
+
+  // ── Tab switch ─────────────────────────────────────────
+  function switchTab(tab) {
+    currentTab = tab;
+    ['trajets','vehicules','reservations'].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    });
+
+    if (tab === 'trajets')      renderTrajetsTab();
+    if (tab === 'vehicules')    renderVehiculesTab();
+    if (tab === 'reservations') renderAllReservationsTab();
+  }
+
+  // ── Render trips tab ───────────────────────────────────
+  function renderTrajetsTab() {
+    const content = document.getElementById('tab-content');
+
+    const header = `
+      <div style="display:flex; justify-content:flex-end; margin-bottom: 16px;">
+        <button class="btn btn-primary" onclick="openModal('trip-modal')">
+          + Proposer un trajet
+        </button>
+      </div>
+    `;
+
+    if (trajets.length === 0) {
+      content.innerHTML = header + `
+        <div class="empty-state">
+          <div class="empty-icon">🛣️</div>
+          <h3>Aucun trajet proposé</h3>
+          <p>Commencez par proposer votre premier trajet.</p>
+        </div>
+      `;
+      return;
+    }
+
+    content.innerHTML = header + `
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${trajets.map(t => `
+          <div class="trip-row">
+            <div class="trip-row-route">
+              ${t.origine} <span style="color:var(--amber)">→</span> ${t.destination}
+            </div>
+            <div class="trip-row-meta">
+              <span>📅 ${formatDateShort(t.heureDepart)}</span>
+              <span>💺 ${t.placesReservees}/${t.placesTotales}</span>
+              <span>💶 ${t.prixParPlace}€</span>
+            </div>
+            ${statusBadge(t.status)}
+            <div class="trip-row-actions">
+              <button class="btn btn-secondary btn-sm"
+                      onclick="viewReservations('${t.id}', '${t.origine} → ${t.destination}')">
+                Réservations
+              </button>
+              ${t.status === 'PREVU' ? `
+                <button class="btn btn-danger btn-sm"
+                        onclick="cloreTrajet('${t.id}')">
+                  Annuler
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // ── Render vehicles tab ────────────────────────────────
+  function renderVehiculesTab() {
+    const content = document.getElementById('tab-content');
+
+    const header = `
+      <div style="display:flex; justify-content:flex-end; margin-bottom: 16px;">
+        <button class="btn btn-primary" onclick="openModal('vehicule-modal')">
+          + Ajouter un véhicule
+        </button>
+      </div>
+    `;
+
+    if (vehicules.length === 0) {
+      content.innerHTML = header + `
+        <div class="empty-state">
+          <div class="empty-icon">🚗</div>
+          <h3>Aucun véhicule enregistré</h3>
+          <p>Ajoutez votre véhicule pour pouvoir proposer des trajets.</p>
+        </div>
+      `;
+      return;
+    }
+
+    content.innerHTML = header + `
+      <div class="grid-auto">
+        ${vehicules.map(v => `
+          <div class="card">
+            <h4 style="margin-bottom:12px;">${v.marque} ${v.modele}</h4>
+            <div class="detail-row">
+              <span class="detail-label">Plaque</span>
+              <span class="detail-value">${v.plaqueImmatriculation}</span>
+            </div>
+            <div class="detail-row" style="border:none;">
+              <span class="detail-label">Capacité max</span>
+              <span class="detail-value">${v.capaciteMax} passagers</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // ── Render all reservations tab ────────────────────────
+  async function renderAllReservationsTab() {
+    const content = document.getElementById('tab-content');
+    showLoading('tab-content');
+
+    // Load reservations for each trip
+    const allRes = [];
+    for (const t of trajets) {
+      const result = await Trajets.reservationsDuTrajet(t.id);
+      if (result.success) {
+        const list = Array.isArray(result.data) ? result.data : [];
+        list.forEach(r => r._trajetLabel = `${t.origine} → ${t.destination}`);
+        allRes.push(...list);
+      }
+    }
+
+    if (allRes.length === 0) {
+      content.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <h3>Aucune réservation reçue</h3>
+          <p>Vos réservations apparaîtront ici une fois que des passagers auront réservé.</p>
+        </div>
+      `;
+      return;
+    }
+
+    content.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${allRes.map(r => `
+          <div class="res-mini">
+            <div>
+              <div style="font-weight:500; margin-bottom: 4px;">
+                ${r._trajetLabel}
+              </div>
+              <div style="font-size:0.8rem; color:var(--text-muted);">
+                👤 ${r.passagerEmail || 'N/A'} &nbsp;·&nbsp;
+                💺 ${r.nombrePlaces} place(s) &nbsp;·&nbsp;
+                💶 ${r.prixTotal?.toFixed(2)} €
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${statusBadge(r.status)}
+              ${r.status === 'EN_ATTENTE' || r.status === 'CONFIRMEE' ? `
+                <button class="btn btn-success btn-sm"
+                        onclick="confirmReservation('${r.id}')">
+                  Confirmer
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // ── View reservations for a specific trip ──────────────
+  async function viewReservations(trajetId, label) {
+    document.getElementById('res-modal-title').textContent = `Réservations — ${label}`;
+    document.getElementById('res-modal-list').innerHTML =
+      '<div class="loading-overlay"><div class="spinner"></div></div>';
+    openModal('res-modal');
+
+    const result = await Trajets.reservationsDuTrajet(trajetId);
+    const list   = Array.isArray(result.data) ? result.data : [];
+
+    if (!result.success || list.length === 0) {
+      document.getElementById('res-modal-list').innerHTML = `
+        <div class="empty-state" style="padding: 32px;">
+          <div class="empty-icon">📭</div>
+          <h3>Aucune réservation</h3>
+        </div>
+      `;
+      return;
+    }
+
+    document.getElementById('res-modal-list').innerHTML = list.map(r => `
+      <div class="res-mini">
+        <div>
+          <div style="font-weight:500;">${r.passagerEmail || 'Passager'}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:3px;">
+            💺 ${r.nombrePlaces} place(s) — 💶 ${r.prixTotal?.toFixed(2)} €
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap: 8px;">
+          ${statusBadge(r.status)}
+          ${r.status === 'EN_ATTENTE' || r.status === 'CONFIRMEE' ? `
+            <button class="btn btn-success btn-sm"
+                    onclick="confirmReservation('${r.id}')">
+              Confirmer
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Confirm a reservation ──────────────────────────────
+  async function confirmReservation(resId) {
+    const result = await Reservations.confirmer(resId);
+    if (result.success) {
+      toast('Réservation confirmée — paiement capturé ✓', 'success');
+      closeModal('res-modal');
+      await renderAllReservationsTab();
+    } else {
+      toast(result.error, 'error');
+    }
+  }
+
+  // ── Close/cancel a trip ────────────────────────────────
+  async function cloreTrajet(id) {
+    if (!confirm('Êtes-vous sûr de vouloir annuler ce trajet ?')) return;
+    const result = await Trajets.clore(id);
+    if (result.success) {
+      toast('Trajet annulé', 'success');
+      await loadTrajets();
+      await loadStats();
+    } else {
+      toast(result.error, 'error');
+    }
+  }
+
+  // ── Create a new trip ──────────────────────────────────
+  async function createTrip(e) {
+    e.preventDefault();
+    const btn = document.getElementById('trip-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Publication...';
+
+    const result = await Trajets.creer({
+      origine:      document.getElementById('t-origine').value,
+      destination:  document.getElementById('t-destination').value,
+      heureDepart:  document.getElementById('t-heure').value,
+      placesTotales: parseInt(document.getElementById('t-places').value),
+      prixParPlace: parseFloat(document.getElementById('t-prix').value),
+      vehiculeId:   document.getElementById('t-vehicule').value
+    });
+
+    btn.disabled = false;
+    btn.innerHTML = 'Publier le trajet';
+
+    if (result.success) {
+      toast('Trajet publié avec succès !', 'success');
+      closeModal('trip-modal');
+      e.target.reset();
+      await loadTrajets();
+      await loadStats();
+    } else {
+      const msg = document.getElementById('trip-form-msg');
+      msg.style.display = 'flex';
+      msg.className = 'alert alert-error';
+      msg.textContent = result.error;
+    }
+  }
+
+  // ── Add a vehicle ──────────────────────────────────────
+  async function addVehicule(e) {
+    e.preventDefault();
+    const btn = document.getElementById('vehicule-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div>';
+
+    const result = await Chauffeur.ajouterVehicule({
+      marque:                document.getElementById('v-marque').value,
+      modele:                document.getElementById('v-modele').value,
+      capaciteMax:           parseInt(document.getElementById('v-capacite').value),
+      plaqueImmatriculation: document.getElementById('v-plaque').value,
+    });
+
+    btn.disabled = false;
+    btn.innerHTML = 'Ajouter le véhicule';
+
+    if (result.success) {
+      toast('Véhicule ajouté !', 'success');
+      closeModal('vehicule-modal');
+      e.target.reset();
+      await loadVehicules();
+      await loadStats();
+    } else {
+      const msg = document.getElementById('vehicule-form-msg');
+      msg.style.display = 'flex';
+      msg.className = 'alert alert-error';
+      msg.textContent = result.error;
+    }
+  }
+
+  // ── Modal helpers ──────────────────────────────────────
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  // Close modal on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  });
+</script>
+</body>
+</html>

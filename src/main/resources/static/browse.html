@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ride With Me — Trajets disponibles</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Hero search bar ── */
+    .hero {
+      background: linear-gradient(145deg, #0f1420 0%, #13161e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 0 40px;
+    }
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .hero-title span { color: var(--amber); }
+    .hero p { margin-bottom: 28px; }
+
+    .search-bar {
+      display: flex;
+      gap: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .search-bar .form-group { flex: 1; min-width: 140px; }
+    .search-bar .form-input { background: var(--bg-input); }
+
+    /* ── Results area ── */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .results-count {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    .results-count strong { color: var(--text); }
+
+    /* ── Trip detail modal ── */
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-soft);
+      font-size: 0.875rem;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: var(--text-muted); }
+    .detail-value { font-weight: 500; color: var(--text); }
+
+    .booking-summary {
+      background: var(--bg-input);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 16px 0;
+    }
+    .booking-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .booking-total-label { font-weight: 600; color: var(--text); }
+    .booking-total-price {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--amber);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar injected by renderNavbar() in script below -->
+
+<!-- ── Hero + Search ──────────────────────────────────── -->
+<div class="hero">
+  <div class="container">
+    <h1 class="hero-title">Trouvez votre <span>trajet</span></h1>
+    <p>Des dizaines de destinations disponibles chaque jour</p>
+
+    <div class="search-bar">
+      <div class="form-group">
+        <label class="form-label">Départ</label>
+        <input class="form-input" type="text" id="search-origine"
+               placeholder="Ex: Tunis">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Arrivée</label>
+        <input class="form-input" type="text" id="search-destination"
+               placeholder="Ex: Sfax">
+      </div>
+      <button class="btn btn-primary" onclick="searchTrajets()" id="search-btn"
+              style="padding: 11px 24px;">
+        Rechercher
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="resetSearch()">
+        Tout afficher
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Results ────────────────────────────────────────── -->
+<main style="padding: 32px 0 64px;">
+  <div class="container">
+    <div class="results-header">
+      <div class="results-count" id="results-count">Chargement...</div>
+      <!-- Sort is cosmetic — in a real app you'd pass sort params to the API -->
+      <select class="form-input" id="sort-select" onchange="sortTrajets()"
+              style="width: auto; font-size: 0.8rem; padding: 7px 28px 7px 12px;">
+        <option value="date">Trier par date</option>
+        <option value="prix-asc">Prix croissant</option>
+        <option value="prix-desc">Prix décroissant</option>
+        <option value="places">Places disponibles</option>
+      </select>
+    </div>
+
+    <div id="trips-grid" class="grid-auto">
+      <!-- Trip cards rendered by JS -->
+    </div>
+  </div>
+</main>
+
+<!-- ── Trip Detail Modal ──────────────────────────────── -->
+<div class="modal-overlay" id="trip-modal">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <h3 id="modal-title">Détails du trajet</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div id="modal-details">
+      <!-- Populated dynamically by openTripModal() -->
+    </div>
+
+    <!-- Booking section — only shown if user is logged in as PASSAGER -->
+    <div id="booking-section" style="display:none; margin-top: 16px;">
+      <div class="divider-text" style="margin: 16px 0;">
+        <span>Réservation</span>
+      </div>
+
+      <div class="booking-summary">
+        <div class="form-group">
+          <label class="form-label">Nombre de places</label>
+          <input class="form-input" type="number" id="places-input"
+                 min="1" value="1" oninput="updateTotal()">
+        </div>
+        <div class="booking-total">
+          <span class="booking-total-label">Total</span>
+          <span class="booking-total-price" id="booking-total">0 €</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full btn-lg"
+              id="book-btn" onclick="bookTrip()">
+        Réserver maintenant
+      </button>
+    </div>
+
+    <!-- Not logged in message -->
+    <div id="login-prompt" style="display:none; margin-top: 16px;">
+      <div class="alert alert-info">
+        <a href="index.html" style="font-weight:600;">Connectez-vous</a>
+        &nbsp;pour réserver ce trajet
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // State
+  let allTrajets = [];       // full list from the API
+  let currentTrip = null;    // the trip currently open in the modal
+  let currentUser = null;    // null if not logged in
+
+  // ── Init ──────────────────────────────────────────────
+  // This page is public — no requireAuth() needed.
+  // We try to get the user silently; if not logged in, we
+  // show the page without the booking section.
+  (async () => {
+    const me = await Auth.me();
+    if (me.success) {
+      currentUser = me.data;
+      saveSession(me.data);
+      // Render navbar with user context
+      renderNavbar(me.data, 'browse');
+    } else {
+      // Not logged in — render minimal navbar with just the brand
+      renderPublicNavbar();
+    }
+
+    // Load trips regardless of login state
+    await loadTrajets();
+  })();
+
+  // ── Public Navbar (for non-logged-in users) ────────────
+  function renderPublicNavbar() {
+    const nav = document.createElement('nav');
+    nav.className = 'navbar';
+    nav.innerHTML = `
+      <div class="navbar-brand">
+        <span class="dot"></span>
+        Ride <span>With Me</span>
+      </div>
+      <div class="navbar-links">
+        <a href="index.html" class="btn btn-ghost btn-sm">Connexion</a>
+        <a href="index.html" class="btn btn-primary btn-sm">Inscription</a>
+      </div>
+    `;
+    document.body.prepend(nav);
+  }
+
+  // ── Load all available trips ───────────────────────────
+  async function loadTrajets() {
+    showLoading('trips-grid');
+    const result = await Trajets.disponibles();
+
+    if (!result.success) {
+      document.getElementById('trips-grid').innerHTML =
+        `<div class="alert alert-error">${result.error}</div>`;
+      return;
+    }
+
+    // The API returns an array — handle both array and single-item responses
+    allTrajets = Array.isArray(result.data) ? result.data : [result.data];
+    renderTripCards(allTrajets);
+  }
+
+  // ── Search ────────────────────────────────────────────
+  async function searchTrajets() {
+    const origine      = document.getElementById('search-origine').value.trim();
+    const destination  = document.getElementById('search-destination').value.trim();
+
+    const btn = document.getElementById('search-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div>';
+
+    const result = await Trajets.disponibles(origine, destination);
+
+    btn.disabled = false;
+    btn.innerHTML = 'Rechercher';
+
+    if (result.success) {
+      allTrajets = Array.isArray(result.data) ? result.data : [result.data];
+      renderTripCards(allTrajets);
+    }
+  }
+
+  function resetSearch() {
+    document.getElementById('search-origine').value = '';
+    document.getElementById('search-destination').value = '';
+    loadTrajets();
+  }
+
+  // ── Sort ──────────────────────────────────────────────
+  function sortTrajets() {
+    const sortValue = document.getElementById('sort-select').value;
+    const sorted = [...allTrajets];
+
+    if (sortValue === 'prix-asc')  sorted.sort((a,b) => a.prixParPlace - b.prixParPlace);
+    if (sortValue === 'prix-desc') sorted.sort((a,b) => b.prixParPlace - a.prixParPlace);
+    if (sortValue === 'date')      sorted.sort((a,b) => new Date(a.heureDepart) - new Date(b.heureDepart));
+    if (sortValue === 'places')    sorted.sort((a,b) => b.placesDisponibles - a.placesDisponibles);
+
+    renderTripCards(sorted);
+  }
+
+  // ── Render trip cards ─────────────────────────────────
+  function renderTripCards(trips) {
+    const grid = document.getElementById('trips-grid');
+    const count = document.getElementById('results-count');
+
+    count.innerHTML = `<strong>${trips.length}</strong> trajet${trips.length !== 1 ? 's' : ''} disponible${trips.length !== 1 ? 's' : ''}`;
+
+    if (trips.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column: 1/-1;">
+          <div class="empty-icon">🔍</div>
+          <h3>Aucun trajet trouvé</h3>
+          <p>Essayez d'autres villes ou vérifiez plus tard.</p>
+          <button class="btn btn-secondary mt-md" onclick="resetSearch()">
+            Voir tous les trajets
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = trips.map(trip => `
+      <div class="trip-card" onclick="openTripModal('${trip.id}')">
+        <div class="trip-route">
+          <span>${trip.origine}</span>
+          <span class="arrow">→</span>
+          <span>${trip.destination}</span>
+        </div>
+
+        <div class="trip-meta">
+          <span>📅 ${formatDateShort(trip.heureDepart)}</span>
+          <span>💺 ${trip.placesDisponibles} place${trip.placesDisponibles !== 1 ? 's' : ''}</span>
+          <span>🧑 ${trip.chauffeur?.email?.split('@')[0] || 'N/A'}</span>
+        </div>
+
+        <div class="trip-footer">
+          <div class="trip-price">
+            ${trip.prixParPlace} €
+            <small>/ place</small>
+          </div>
+          ${trip.complet
+            ? '<span class="badge badge-red">Complet</span>'
+            : '<span class="badge badge-green">Disponible</span>'}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Open trip detail modal ─────────────────────────────
+  function openTripModal(tripId) {
+    currentTrip = allTrajets.find(t => t.id === tripId);
+    if (!currentTrip) return;
+
+    document.getElementById('modal-title').textContent =
+      `${currentTrip.origine} → ${currentTrip.destination}`;
+
+    // Fill the details section
+    document.getElementById('modal-details').innerHTML = `
+      <div class="detail-row">
+        <span class="detail-label">Départ</span>
+        <span class="detail-value">${currentTrip.origine}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Destination</span>
+        <span class="detail-value">${currentTrip.destination}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Date & heure</span>
+        <span class="detail-value">${formatDate(currentTrip.heureDepart)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Chauffeur</span>
+        <span class="detail-value">${currentTrip.chauffeur?.email || 'N/A'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Véhicule</span>
+        <span class="detail-value">
+          ${currentTrip.vehicule?.marque || ''} ${currentTrip.vehicule?.modele || ''}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Places disponibles</span>
+        <span class="detail-value">${currentTrip.placesDisponibles} / ${currentTrip.placesTotales}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Prix par place</span>
+        <span class="detail-value" style="color: var(--amber); font-weight: 700;">
+          ${currentTrip.prixParPlace} €
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Statut</span>
+        <span>${statusBadge(currentTrip.status)}</span>
+      </div>
+    `;
+
+    // Show booking form only if logged in as PASSAGER and trip is available
+    const role = currentUser?.role?.replace('ROLE_', '');
+    const bookingSection  = document.getElementById('booking-section');
+    const loginPrompt     = document.getElementById('login-prompt');
+
+    if (!currentUser) {
+      // Not logged in
+      loginPrompt.style.display = 'block';
+      bookingSection.style.display = 'none';
+    } else if (role === 'PASSAGER' && !currentTrip.complet) {
+      // Logged in as passenger — show booking form
+      bookingSection.style.display = 'block';
+      loginPrompt.style.display = 'none';
+      document.getElementById('places-input').max = currentTrip.placesDisponibles;
+      document.getElementById('places-input').value = 1;
+      updateTotal();
+    } else {
+      // Driver or admin — just show info
+      bookingSection.style.display = 'none';
+      loginPrompt.style.display = 'none';
+    }
+
+    // Open modal with CSS transition
+    document.getElementById('trip-modal').classList.add('open');
+  }
+
+  // Update the price total when seat count changes
+  function updateTotal() {
+    const places = parseInt(document.getElementById('places-input').value) || 1;
+    const total = places * (currentTrip?.prixParPlace || 0);
+    document.getElementById('booking-total').textContent = `${total.toFixed(2)} €`;
+  }
+
+  function closeModal() {
+    document.getElementById('trip-modal').classList.remove('open');
+  }
+
+  // ── Book a trip ───────────────────────────────────────
+  async function bookTrip() {
+    const places = parseInt(document.getElementById('places-input').value);
+    if (!places || places < 1) {
+      toast('Veuillez entrer un nombre de places valide', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('book-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Réservation...';
+
+    const result = await Reservations.creer(currentTrip.id, places);
+
+    btn.disabled = false;
+    btn.innerHTML = 'Réserver maintenant';
+
+    if (result.success) {
+      toast('Réservation confirmée ! 🎉', 'success');
+      closeModal();
+      // Refresh the trip list so seat counts update
+      await loadTrajets();
+    } else {
+      toast(result.error, 'error');
+    }
+  }
+
+  // Close modal when clicking outside it
+  document.getElementById('trip-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+</body>
+</html>

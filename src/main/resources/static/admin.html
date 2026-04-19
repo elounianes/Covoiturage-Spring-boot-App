@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ride With Me — Administration</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main style="padding-bottom: 64px;">
+  <div class="container">
+
+    <div class="page-header">
+      <h2>Administration</h2>
+      <p>Supervision globale de la plateforme</p>
+    </div>
+
+    <!-- ── Stats ──────────────────────────────────────── -->
+    <div class="grid-4 mb-lg" id="stats-row"></div>
+
+    <!-- ── Tabs ───────────────────────────────────────── -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-users"
+              onclick="switchTab('users')">Utilisateurs</button>
+      <button class="tab-btn" id="tab-trajets"
+              onclick="switchTab('trajets')">Trajets</button>
+      <button class="tab-btn" id="tab-reservations"
+              onclick="switchTab('reservations')">Réservations</button>
+    </div>
+
+    <div id="tab-content"></div>
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  let users = [], trajets = [], reservations = [];
+  let currentTab = 'users';
+
+  (async () => {
+    const user = await requireRole(['ADMIN']);
+    if (!user) return;
+    renderNavbar(user, 'dashboard');
+    await loadAll();
+  })();
+
+  async function loadAll() {
+    showLoading('tab-content');
+    const [u, t, r] = await Promise.all([
+      Admin.users(), Admin.trajets(), Admin.reservations()
+    ]);
+
+    users        = Array.isArray(u.data) ? u.data : [];
+    trajets      = Array.isArray(t.data) ? t.data : [];
+    reservations = Array.isArray(r.data) ? r.data : [];
+
+    renderStats();
+    switchTab('users');
+  }
+
+  function renderStats() {
+    const activeUsers  = users.filter(u => u.status === 'ACTIF').length;
+    const activeTrajets = trajets.filter(t => t.status === 'PREVU').length;
+    const confirmed    = reservations.filter(r => r.status === 'CONFIRMEE').length;
+    const revenue      = reservations
+      .filter(r => r.status === 'CONFIRMEE')
+      .reduce((s, r) => s + (r.prixTotal || 0), 0);
+
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-label">Utilisateurs actifs</div>
+        <div class="stat-value">${activeUsers}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🛣️</div>
+        <div class="stat-label">Trajets disponibles</div>
+        <div class="stat-value">${activeTrajets}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label">Réservations confirmées</div>
+        <div class="stat-value">${confirmed}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💶</div>
+        <div class="stat-label">Volume transactions</div>
+        <div class="stat-value">${revenue.toFixed(0)} €</div>
+      </div>
+    `;
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    ['users','trajets','reservations'].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    });
+    if (tab === 'users')        renderUsersTab();
+    if (tab === 'trajets')      renderTrajetsTab();
+    if (tab === 'reservations') renderReservationsTab();
+  }
+
+  // ── Users table ────────────────────────────────────────
+  function renderUsersTab() {
+    const content = document.getElementById('tab-content');
+    if (users.length === 0) {
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><h3>Aucun utilisateur</h3></div>';
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Téléphone</th>
+              <th>Rôle</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(u => `
+              <tr id="user-row-${u.id}">
+                <td style="font-weight:500">${u.email}</td>
+                <td style="color:var(--text-muted)">${u.phone || '—'}</td>
+                <td>${roleBadge(u.role)}</td>
+                <td>${statusBadge(u.status)}</td>
+                <td>
+                  <div style="display:flex; gap:6px;">
+                    ${u.status !== 'SUSPENDU' ? `
+                      <button class="btn btn-ghost btn-sm"
+                              onclick="suspendUser('${u.id}')">
+                        Suspendre
+                      </button>
+                    ` : ''}
+                    ${u.status !== 'BLOQUE' ? `
+                      <button class="btn btn-danger btn-sm"
+                              onclick="blockUser('${u.id}')">
+                        Bloquer
+                      </button>
+                    ` : '<span class="badge badge-red">Bloqué</span>'}
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ── Trips table ────────────────────────────────────────
+  function renderTrajetsTab() {
+    const content = document.getElementById('tab-content');
+    content.innerHTML = `
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Trajet</th>
+              <th>Chauffeur</th>
+              <th>Départ</th>
+              <th>Places</th>
+              <th>Prix</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${trajets.map(t => `
+              <tr>
+                <td style="font-weight:500">${t.origine} → ${t.destination}</td>
+                <td style="color:var(--text-muted); font-size:0.85rem">
+                  ${t.chauffeur?.email || '—'}
+                </td>
+                <td style="color:var(--text-muted); font-size:0.85rem">
+                  ${formatDateShort(t.heureDepart)}
+                </td>
+                <td>${t.placesReservees}/${t.placesTotales}</td>
+                <td style="color:var(--amber); font-weight:600">${t.prixParPlace}€</td>
+                <td>${statusBadge(t.status)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ── Reservations table ─────────────────────────────────
+  function renderReservationsTab() {
+    const content = document.getElementById('tab-content');
+    content.innerHTML = `
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Trajet</th>
+              <th>Passager</th>
+              <th>Places</th>
+              <th>Total</th>
+              <th>Paiement</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reservations.map(r => `
+              <tr>
+                <td style="font-weight:500; font-size:0.875rem">
+                  ${r.trajet?.origine || '?'} → ${r.trajet?.destination || '?'}
+                </td>
+                <td style="color:var(--text-muted); font-size:0.85rem">
+                  ${r.passagerEmail || '—'}
+                </td>
+                <td>${r.nombrePlaces}</td>
+                <td style="color:var(--amber); font-weight:600">
+                  ${r.prixTotal?.toFixed(2)} €
+                </td>
+                <td>${r.transaction ? statusBadge(r.transaction.status) : '<span class="badge badge-muted">—</span>'}</td>
+                <td>${statusBadge(r.status)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ── Admin actions ──────────────────────────────────────
+  async function suspendUser(id) {
+    if (!confirm('Suspendre cet utilisateur ?')) return;
+    const result = await Admin.suspendre(id);
+    if (result.success) {
+      toast('Compte suspendu', 'success');
+      await loadAll();
+    } else { toast(result.error, 'error'); }
+  }
+
+  async function blockUser(id) {
+    if (!confirm('Bloquer définitivement cet utilisateur ?')) return;
+    const result = await Admin.bloquer(id);
+    if (result.success) {
+      toast('Utilisateur bloqué', 'success');
+      await loadAll();
+    } else { toast(result.error, 'error'); }
+  }
+</script>
+</body>
+</html>

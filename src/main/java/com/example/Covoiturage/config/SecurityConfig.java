@@ -1,8 +1,8 @@
 package com.example.Covoiturage.config;
 
-import com.example.Covoiturage.service.UserDetailsServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -16,8 +16,11 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import java.util.HashMap;
-import java.util.Map;
+
+import com.example.Covoiturage.service.UserDetailsServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -91,6 +94,17 @@ public class SecurityConfig {
             // Order matters — Spring checks rules top to bottom,
             // stops at the first match. Always put specific rules first.
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                "/",
+                "/index.html",
+                "/browse.html",
+                "/passenger.html",
+                "/driver.html",
+                "/admin.html",
+                "/notifications.html",
+                "/css/**",
+                "/js/**"
+            ).permitAll()
 
                 // Public endpoints — no login required
                 .requestMatchers(
