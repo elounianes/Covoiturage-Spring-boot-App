@@ -57,8 +57,7 @@ public class ChauffeurController {
     public ResponseEntity<ApiResponse<List<Vehicule>>> getMesVehicules(@AuthenticationPrincipal UserDetails userDetails) {
 
         Chauffeur chauffeur = getChauffeurFromSession(userDetails);
-        List<Vehicule> vehicules = vehiculeRepo
-            .findByProprietaireId(chauffeur.getId());
+        List<Vehicule> vehicules = vehiculeRepo.findByProprietaireId(chauffeur.getId());
 
         return ResponseEntity.ok(ApiResponse.success(vehicules));
     }
@@ -70,20 +69,13 @@ public class ChauffeurController {
 
         Chauffeur chauffeur = getChauffeurFromSession(userDetails);
 
-        Vehicule vehicule = new Vehicule(
-            request.getMarque(),
-            request.getModele(),
-            request.getCapaciteMax(),
-            request.getPlaqueImmatriculation()
-        );
+        Vehicule vehicule = new Vehicule(request.getMarque(),request.getModele(),request.getCapaciteMax(),request.getPlaqueImmatriculation());
 
         chauffeur.ajouterVehicule(vehicule);  
         vehiculeRepo.save(vehicule);
         chauffeurRepo.save(chauffeur);
 
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(ApiResponse.success(vehicule));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(vehicule));
     }
 
     @GetMapping("/trajets")
@@ -91,8 +83,7 @@ public class ChauffeurController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         Chauffeur chauffeur = getChauffeurFromSession(userDetails);
-        List<Trajet> trajets = trajetRepo
-            .findByChauffeurId(chauffeur.getId());
+        List<Trajet> trajets = trajetRepo.findByChauffeurId(chauffeur.getId());
 
         return ResponseEntity.ok(ApiResponse.success(trajets));
     }
@@ -102,10 +93,8 @@ public class ChauffeurController {
             getReservationsDuTrajet(
             @PathVariable String trajetId,
             @AuthenticationPrincipal UserDetails userDetails) {
-
         Chauffeur chauffeur = getChauffeurFromSession(userDetails);
 
-        // Fetch the trip and verify it belongs to this driver
         Trajet trajet = trajetRepo.findById(trajetId)
             .orElseThrow(() ->
                 new ResourceNotFoundException("Trajet", trajetId));

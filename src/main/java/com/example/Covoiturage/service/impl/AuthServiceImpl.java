@@ -25,7 +25,7 @@ public class AuthServiceImpl implements AuthService{
     @Override
     public User creerCompte(String email,String phone, String mdp,UserRole role) {
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email Deja existant"+email);
+            throw new IllegalArgumentException("Email Deja existant: "+ email);
         }
         String hash = passwordEncoder.encode(mdp);
 
@@ -44,15 +44,17 @@ public class AuthServiceImpl implements AuthService{
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));
         if (user.getStatus() != UserStatus.ACTIF){
-            throw new UtilisateurInactifException(email);
+            throw new UtilisateurInactifException("Votre compte est " + user.getStatus() + ". Veuillez contacter le support.");
         }
         if(!passwordEncoder.matches(mdp, user.getPasswordHash())){
             user.incrementFailedAttempts();
             userRepository.save(user);
         
-        if(user.getStatus() == UserStatus.BLOQUE){
-            notificationService.notfierUser(user,"Compte bloqué ","Votre compte a été bloqué suite à plusieurs tentatives de connexion échouées.");
-        }
+        if (user.getFailedLoginAttempts() >= 5) {
+                user.setStatus(UserStatus.SUSPENDU);
+                userRepository.save(user);
+                notificationService.notfierUser(user,"Compte suspendu","Votre compte a été suspendu après plusieurs tentatives de connexion infructueuses. Veuillez contacter le support.");
+                }
         throw new IllegalArgumentException("Email ou mot de passe incorrect");
         }
         user.resetFailedAttempts();

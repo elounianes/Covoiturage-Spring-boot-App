@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
@@ -47,9 +46,4 @@ public class Passager extends User {
         this.historiqueReservations.add(r);
     }
 
-    public void evaluerChauffeur(Chauffeur chauffeur, int note) {
-        if (note < 1 || note > 5)
-            throw new IllegalArgumentException("La note doit être entre 1 et 5");
-        chauffeur.ajouterNote(note);
-    }
 }

@@ -1,15 +1,26 @@
 package com.example.Covoiturage.service.impl;
 
-import org.springframework.stereotype.Service;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.Covoiturage.exception.PaiementEchouéException;
+import com.example.Covoiturage.exception.ResourceNotFoundException;
+import com.example.Covoiturage.exception.TrajetCompletException;
+import com.example.Covoiturage.model.MoyenPaiement;
+import com.example.Covoiturage.model.Passager;
+import com.example.Covoiturage.model.PaymentTransaction;
+import com.example.Covoiturage.model.Reservation;
+import com.example.Covoiturage.model.Trajet;
+import com.example.Covoiturage.model.enums.ReservationStatus;
 import com.example.Covoiturage.repository.ReservationRepository;
 import com.example.Covoiturage.repository.TrajetRepository;
-import com.example.Covoiturage.model.*;
-import com.example.Covoiturage.model.enums.*;
 import com.example.Covoiturage.service.NotificationService;
 import com.example.Covoiturage.service.PaiementService;
 import com.example.Covoiturage.service.ReservationService;
-import com.example.Covoiturage.exception.*;
+import com.example.Covoiturage.repository.MoyenPaiementRepository;
+import com.example.Covoiturage.repository.PaymentTransactionRepository;
+
 import jakarta.transaction.Transactional;
 @Transactional
 @Service
@@ -18,28 +29,37 @@ public class ReservationServiceImpl implements ReservationService{
     private final TrajetRepository trajetRepository;
     private final PaiementService paiementService;
     private final NotificationService notificationService;
-    
+    private final MoyenPaiementRepository moyenPaiementRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
-    public ReservationServiceImpl(ReservationRepository reservationRepository, TrajetRepository trajetRepository, PaiementService paiementService, NotificationService notificationService) {
+    public ReservationServiceImpl(ReservationRepository reservationRepository, TrajetRepository trajetRepository, MoyenPaiementRepository moyenPaiementRepository, PaiementService paiementService, NotificationService notificationService, PaymentTransactionRepository paymentTransactionRepository) {
         this.reservationRepository = reservationRepository;
         this.trajetRepository = trajetRepository;
+        this.moyenPaiementRepository = moyenPaiementRepository;
         this.paiementService = paiementService;
         this.notificationService = notificationService;
+        this.paymentTransactionRepository = paymentTransactionRepository;
     }
     @Override
     public Reservation creerReservation(Passager passager, Trajet trajet, int nombrePlaces) {
         if (trajet.getPlacesDisponibles() < nombrePlaces) {
-            throw new IllegalArgumentException("Pas assez de places disponibles");
+            throw new IllegalArgumentException("Seulement " + trajet.getPlacesDisponibles() + " place(s) disponible(s), vous en demandez " + nombrePlaces);
         }
+        List<MoyenPaiement> moyens = moyenPaiementRepository.findByPassagerId(passager.getId());
+
+    if (moyens.isEmpty())
+        {throw new PaiementEchouéException("Vous devez ajouter un moyen de paiement " +"avant de pouvoir réserver un trajet. " +"Rendez-vous dans votre espace passager.");}
+    
+    
+    
         if (trajet.isComplet()) {
             throw new TrajetCompletException("Trajet complet");
         }
         Reservation reservation = new Reservation(trajet, passager, nombrePlaces);
-        paiementService.payer(reservation);
-        reservation.confirmerReservation();
-        trajet.ajouterPassager(reservation);
         reservationRepository.save(reservation);
-        notificationService.notfierUser(passager,"Reservation confirmée","Votre reservation a été confirmée.");
+        notificationService.notfierUser(passager, "Demande de réservation envoyée","Votre demande pour " + trajet.getOrigine() + " vers " +trajet.getDestination() +" est en attente de confirmation du chauffeur.");
+        notificationService.notfierUser(trajet.getChauffeur(), "Nouvelle demande de réservation", passager.getEmail() + " demande " + nombrePlaces + " place(s) sur votre trajet " + trajet.getOrigine() + " vers " + trajet.getDestination() + ". Veuillez confirmer ou refuser.");
+
         return reservation;
     }
     
@@ -47,9 +67,39 @@ public class ReservationServiceImpl implements ReservationService{
     public void confirmerReservation(String reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
             .orElseThrow(() -> new IllegalArgumentException("Reservation non trouvée"));
-        reservation.confirmerReservation();
+        reservation.setStatus(ReservationStatus.CONFIRMEE);
+        
+        paiementService.payer(reservation);
+        paiementService.capturerPaiement(reservation);
+        
+        List<MoyenPaiement> moyens = moyenPaiementRepository
+        .findByPassagerId(reservation.getPassager().getId());
+
+        MoyenPaiement moyenUtilise = moyens.get(0);
+
+    System.out.println("[PAIEMENT] Carte utilisée : "
+    + moyenUtilise.getNumeroMasque()
+    + " pour " + reservation.getPrixTotal() + "DT");
+
+PaymentTransaction transaction = new PaymentTransaction(
+    reservation.getPrixTotal());
+transaction.autoriser();
+transaction.capturer();
+paymentTransactionRepository.save(transaction);
+
+reservation.setTransaction(transaction);
+        
+        
+        reservation.getTrajet().ajouterPassager(reservation);
         reservationRepository.save(reservation);
-        notificationService.notfierUser(reservation.getPassager(),"Reservation confirmée","Votre reservation a été confirmée.");
+        trajetRepository.save(reservation.getTrajet());
+        notificationService.notfierUser(reservation.getPassager(),
+        "Réservation confirmée !",
+        "Votre réservation pour " +
+        reservation.getTrajet().getOrigine() + " vers " +
+        reservation.getTrajet().getDestination() +
+        " a été confirmée par le chauffeur. Paiement de " +
+        reservation.getPrixTotal() + "DT effectué.");
     }
     @Override
     public void annulerReservation(String reservationId,boolean isDriverCancel) {
@@ -75,7 +125,7 @@ public class ReservationServiceImpl implements ReservationService{
             else{
                 if(avantDelai){
                     paiementService.rembourser(reservation,prixTotal);
-                    notificationService.notfierUser(reservation.getPassager(),"Annulation de reservation","Votre reservation a été annulée. " + "Un remboursement de "+prixTotal+"€ vous a été effectué.");
+                    notificationService.notfierUser(reservation.getPassager(),"Annulation de reservation","Votre reservation a été annulée. " + "Un remboursement de "+prixTotal+"DT vous a été effectué.");
                 }
                 else{
                     double remboursement = prixTotal *0.5;
@@ -86,12 +136,28 @@ public class ReservationServiceImpl implements ReservationService{
                 }
 
             }
-            reservation.annulerReservation();
+            reservation.setStatus(ReservationStatus.ANNULEE);
             reservation.getTrajet().retirerPassager(reservation);
             reservationRepository.save(reservation);
             trajetRepository.save(reservation.getTrajet());
-            
-    } 
+    }
+
+    @Override
+    public void refuserReservation(String reservationId){
+       Reservation reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new IllegalArgumentException("Reservation non trouvée"));
+        if (reservation.getStatus() != ReservationStatus.EN_ATTENTE) {
+            throw new IllegalArgumentException("Seules les réservations en attente peuvent être refusées");
+        }
+        reservation.setStatus(ReservationStatus.ANNULEE);
+        reservationRepository.save(reservation);
+        notificationService.notfierUser(reservation.getPassager(),
+        "Réservation refusée",
+        "Votre demande pour " +
+        reservation.getTrajet().getOrigine() + " → " +
+        reservation.getTrajet().getDestination() +
+        " a été refusée par le chauffeur. Aucun paiement n'a été effectué.");
+}   
     @Override
     public List<Reservation> getReservationsByPassager(String passagerId) {
         return reservationRepository.findByPassagerId(passagerId);

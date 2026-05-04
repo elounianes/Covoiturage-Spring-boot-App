@@ -92,7 +92,6 @@ public class DataInitializer implements CommandLineRunner {
         moyenPaiementRepo.save(mp);
         passagerRepo.save(alice);
 
-        // ── Create one reservation for testing ────────────
         reservationService.creerReservation(alice, t1, 1);
 
         System.out.println("===== SAMPLE DATA READY =====\n");
@@ -100,6 +99,5 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("  Passager  → alice@test.com / password123");
         System.out.println("  Chauffeur → bob@test.com   / password123");
         System.out.println("  Admin     → admin@test.com / password123");
-        System.out.println("H2 Console → http://localhost:8080/h2-console");
     }
 }

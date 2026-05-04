@@ -56,7 +56,7 @@ public class Chauffeur extends User {
         this.trajetsProposes.add(t);
     }
 
-    public double consulterNotesChauffeur() {
+    public double consulterNotes() {
         return this.noteMoyenne;
     }
 

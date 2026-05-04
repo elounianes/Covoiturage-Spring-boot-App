@@ -1,7 +1,7 @@
 package com.example.Covoiturage.service;
 import java.time.LocalDateTime;
 import com.example.Covoiturage.model.*;
-import com.example.Covoiturage.model.Vehicule;
+
 import java.util.List;
 
 public interface TrajetService {
@@ -9,5 +9,6 @@ public interface TrajetService {
     void cloreTrajet(String trajetId);
     List<Trajet> getTrajets(String origine, String destination);
     List<Trajet>getTrajetsDiponibles();
+    void terminerTrajet(String trajetId);
     Trajet getTrajet(String trajetId);
 }

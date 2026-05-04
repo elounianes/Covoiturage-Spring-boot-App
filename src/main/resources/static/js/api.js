@@ -165,6 +165,23 @@ const Notifications = {
   // Mark one as read
   lire: (id) => put(`/api/notifications/${id}/lire`),
 };
+// Add to api.js
+
+// Trip: mark as finished (driver action)
+Trajets.terminer = (id) => post(`/api/trajets/${id}/terminer`);
+
+// Evaluation
+const Evaluations = {
+  evaluerChauffeur: (chauffeurId, note) =>
+    post(`/api/evaluations/chauffeur/${chauffeurId}`, { note })
+};
+Reservations.refuser = (id) => post(`/api/reservations/${id}/refuser`);
+// Payment methods for passenger
+const Paiement = {
+  list:    ()   => get('/api/passager/moyens-paiement'),
+  ajouter: (data) => post('/api/passager/moyens-paiement', data),
+  supprimer: (id) => del(`/api/passager/moyens-paiement/${id}`)
+};
 
 // ── Admin endpoints ───────────────────────────────────────
 const Admin = {

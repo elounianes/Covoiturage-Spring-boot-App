@@ -28,10 +28,7 @@ public class AdminController {
     private final AuthService authService;
 
 
-    public AdminController(UserRepository userRepo,
-                            TrajetRepository trajetRepo,
-                            ReservationRepository reservationRepo,
-                            AuthService authService) {
+    public AdminController(UserRepository userRepo,TrajetRepository trajetRepo,ReservationRepository reservationRepo,AuthService authService) {
         this.userRepo = userRepo;
         this.trajetRepo = trajetRepo;
         this.reservationRepo = reservationRepo;
@@ -52,6 +49,7 @@ public class AdminController {
                 new ResourceNotFoundException("Utilisateur", id));
         return ResponseEntity.ok(ApiResponse.success(user));
     }
+    
     @PutMapping("/users/{id}/suspendre")
     public ResponseEntity<ApiResponse<Void>> suspendreCompte(
             @PathVariable String id) {

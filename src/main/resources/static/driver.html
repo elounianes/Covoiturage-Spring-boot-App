@@ -306,7 +306,7 @@
             <div class="trip-row-meta">
               <span>📅 ${formatDateShort(t.heureDepart)}</span>
               <span>💺 ${t.placesReservees}/${t.placesTotales}</span>
-              <span>💶 ${t.prixParPlace}€</span>
+              <span>💶 ${t.prixParPlace}DT</span>
             </div>
             ${statusBadge(t.status)}
             <div class="trip-row-actions">
@@ -314,12 +314,16 @@
                       onclick="viewReservations('${t.id}', '${t.origine} → ${t.destination}')">
                 Réservations
               </button>
-              ${t.status === 'PREVU' ? `
-                <button class="btn btn-danger btn-sm"
-                        onclick="cloreTrajet('${t.id}')">
-                  Annuler
-                </button>
-              ` : ''}
+           ${t.status === 'PREVU' || t.status === 'EN_COURS' ? `
+  <button class="btn btn-success btn-sm"
+          onclick="terminerTrajet('${t.id}')">
+    ✓ Terminer
+  </button>
+  <button class="btn btn-danger btn-sm"
+          onclick="cloreTrajet('${t.id}')">
+    Annuler
+  </button>
+` : ''}
             </div>
           </div>
         `).join('')}
@@ -407,7 +411,8 @@
               <div style="font-size:0.8rem; color:var(--text-muted);">
                 👤 ${r.passagerEmail || 'N/A'} &nbsp;·&nbsp;
                 💺 ${r.nombrePlaces} place(s) &nbsp;·&nbsp;
-                💶 ${r.prixTotal?.toFixed(2)} €
+                💶 ${r.prixTotal?.toFixed(2)} 
+                DT
               </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -450,17 +455,23 @@
         <div>
           <div style="font-weight:500;">${r.passagerEmail || 'Passager'}</div>
           <div style="font-size:0.8rem; color:var(--text-muted); margin-top:3px;">
-            💺 ${r.nombrePlaces} place(s) — 💶 ${r.prixTotal?.toFixed(2)} €
+            💺 ${r.nombrePlaces} place(s) — 💶 ${r.prixTotal?.toFixed(2)} DT
           </div>
         </div>
         <div style="display:flex; align-items:center; gap: 8px;">
           ${statusBadge(r.status)}
-          ${r.status === 'EN_ATTENTE' || r.status === 'CONFIRMEE' ? `
-            <button class="btn btn-success btn-sm"
-                    onclick="confirmReservation('${r.id}')">
-              Confirmer
-            </button>
-          ` : ''}
+         ${r.status === 'EN_ATTENTE' ? `
+  <div style="display:flex; gap:6px;">
+    <button class="btn btn-success btn-sm"
+            onclick="confirmReservation('${r.id}')">
+      ✓ Confirmer
+    </button>
+    <button class="btn btn-danger btn-sm"
+            onclick="refuserReservation('${r.id}')">
+      ✕ Refuser
+    </button>
+  </div>
+` : ''}
         </div>
       </div>
     `).join('');
@@ -523,7 +534,17 @@
       msg.textContent = result.error;
     }
   }
-
+async function refuserReservation(resId) {
+    if (!confirm('Refuser cette réservation ?')) return;
+    const result = await Reservations.refuser(resId);
+    if (result.success) {
+        toast('Réservation refusée — passager notifié', 'info');
+        closeModal('res-modal');
+        await renderAllReservationsTab();
+    } else {
+        toast(result.error, 'error');
+    }
+}
   // ── Add a vehicle ──────────────────────────────────────
   async function addVehicule(e) {
     e.preventDefault();
@@ -569,6 +590,17 @@
       if (e.target === overlay) overlay.classList.remove('open');
     });
   });
+  async function terminerTrajet(id) {
+  if (!confirm('Marquer ce trajet comme terminé ? Les passagers seront invités à vous évaluer.')) return;
+  const result = await Trajets.terminer(id);
+  if (result.success) {
+    toast('Trajet terminé — passagers notifiés ✓', 'success');
+    await loadTrajets();
+    await loadStats();
+  } else {
+    toast(result.error, 'error');
+  }
+}
 </script>
 </body>
 </html>

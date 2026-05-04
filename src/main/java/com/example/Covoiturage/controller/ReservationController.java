@@ -38,22 +38,14 @@ public class ReservationController {
     @PreAuthorize("hasRole('PASSAGER')")
     public ResponseEntity<ApiResponse<Reservation>> creerReservation(@Valid @RequestBody ReservationRequest request,@AuthenticationPrincipal UserDetails userDetails) {
 
-        Passager passager = passagerRepo
-            .findByEmail(userDetails.getUsername())
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Passager",
-                    userDetails.getUsername()));
+        Passager passager = passagerRepo.findByEmail(userDetails.getUsername()).orElseThrow(() -> new ResourceNotFoundException("Passager", userDetails.getUsername()));
 
-        // Resolve the trip
         Trajet trajet = trajetService
             .getTrajet(request.getTrajetId());
 
-        Reservation reservation = reservationService
-            .creerReservation(passager, trajet, request.getNombrePlaces());
+        Reservation reservation = reservationService.creerReservation(passager, trajet, request.getNombrePlaces());
 
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(ApiResponse.success(reservation));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(reservation));
     }
 
     
@@ -68,8 +60,7 @@ public class ReservationController {
                 new ResourceNotFoundException("Passager",
                     userDetails.getUsername()));
 
-        List<Reservation> reservations = reservationService
-            .getReservationsByPassager(passager.getId());
+        List<Reservation> reservations = reservationService.getReservationsByPassager(passager.getId());
 
         return ResponseEntity.ok(ApiResponse.success(reservations));
     }
@@ -83,7 +74,6 @@ public class ReservationController {
         Reservation reservation = reservationService
             .getReservationByreservationId(id);
 
-        // Ownership check — you can only view your own reservation
         if (!reservation.getPassager().getEmail()
                 .equals(userDetails.getUsername())) {
             return ResponseEntity
@@ -112,7 +102,6 @@ public class ReservationController {
                     "Vous ne pouvez pas annuler la réservation d'un autre passager"));
         }
 
-        // isDriverCancel = false → passenger initiated this cancellation
         reservationService.annulerReservation(id, false);
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -140,5 +129,24 @@ public class ReservationController {
 
         return ResponseEntity.ok(ApiResponse.success(
             "Réservation confirmée — paiement capturé"));
+    }
+    @PostMapping("/{id}/refuser")
+    @PreAuthorize("hasRole('CHAUFFEUR')")
+    public ResponseEntity<ApiResponse<Void>> refuserReservation(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Reservation reservation = reservationService.getReservationByreservationId(id);
+
+        if (!reservation.getTrajet().getChauffeur().getEmail()
+                .equals(userDetails.getUsername())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(
+                    "Vous ne pouvez refuser que vos propres réservations"));
+        }
+
+        reservationService.refuserReservation(id);
+        return ResponseEntity.ok(
+            ApiResponse.success("Réservation refusée — passager notifié"));
     }
 }

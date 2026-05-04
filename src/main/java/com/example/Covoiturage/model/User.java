@@ -19,7 +19,7 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
 
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // Ignore Hibernate-specific properties during JSON serialization lazy loading
 @Entity
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -59,19 +59,9 @@ public abstract class User {
         return null;
     }
 
-  /* 
-        TESTING ----
-  public void incrementFailedAttempts() {
+ 
+    public void incrementFailedAttempts() {
         this.failedLoginAttempts++;
-        if (this.failedLoginAttempts >= 5) {
-            this.status = UserStatus.BLOQUE;
-        }
-    }
-        */
-
-    public int incrementFailedAttempts() {
-        this.failedLoginAttempts++;
-        return failedLoginAttempts;
     }
 
 
@@ -79,14 +69,7 @@ public abstract class User {
     public void resetFailedAttempts() {
         this.failedLoginAttempts = 0;
     }
-/*
-    public void suspendreCompte() {
-        this.status = UserStatus.SUSPENDU;
-    }
 
-    public void bloquerUtilisateur() {
-        this.status = UserStatus.BLOQUE;
-    }*/
 
     public void deconnecter() {
         System.out.println("[AUTH] Déconnexion de " + email);

@@ -23,8 +23,14 @@ public class TrajetRequest {
 
     @NotBlank(message = "L'identifiant du véhicule est obligatoire")
     private String vehiculeId;
-
-    // Getters and setters
+    
+    private String nomChauffeur;
+    private String prenomChauffeur;
+    
+    public String getNomChauffeur() { return nomChauffeur; }
+    public void setNomChauffeur(String n) { this.nomChauffeur = n; }
+    public String getPrenomChauffeur() { return prenomChauffeur; }
+    public void setPrenomChauffeur(String p) { this.prenomChauffeur = p; }
     public String getOrigine() { return origine; }
     public void setOrigine(String o) { this.origine = o; }
     public String getDestination() { return destination; }

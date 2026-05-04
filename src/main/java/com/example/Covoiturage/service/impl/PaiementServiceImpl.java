@@ -30,7 +30,6 @@ public class PaiementServiceImpl implements PaiementService {
             throw new PaiementEchouéException("Aucun moyen de paiement disponible");
         }
         MoyenPaiement moyen = moyens.get(0);
-        // dima temchi 5tr payer traj3 dima true
         if (!moyen.payer(reservation.getPrixTotal())) {
             throw new PaiementEchouéException("Paiement refusé");
         }

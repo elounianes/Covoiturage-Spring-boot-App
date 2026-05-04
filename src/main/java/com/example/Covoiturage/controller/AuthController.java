@@ -46,7 +46,7 @@ public class AuthController {
         ));                
 
             }
-    // ── Global validation error handler for this controller ──
+          // ── Global validation error handler for this controller ──
     // When @Valid fails, Spring throws MethodArgumentNotValidException.
     // This catches it and returns a clean JSON 
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)

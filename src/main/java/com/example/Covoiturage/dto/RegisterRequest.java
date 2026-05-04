@@ -23,7 +23,6 @@ public class RegisterRequest {
     @NotNull(message = "Le rôle est obligatoire")
     private UserRole role; // "PASSAGER", "CHAUFFEUR", or "ADMIN"
 
-    // Getters and setters
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }

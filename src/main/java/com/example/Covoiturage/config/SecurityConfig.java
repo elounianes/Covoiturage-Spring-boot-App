@@ -90,6 +90,12 @@ public class SecurityConfig {
             // In production with real JWT tokens, you would handle this differently.
             .csrf(AbstractHttpConfigurer::disable)
 
+            // ── Allow H2 console iframes ──────────────────
+            // H2 console uses iframes; Spring Security blocks them by default.
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.disable())
+            )
+
             // ── URL-based access rules ────────────────────
             // Order matters — Spring checks rules top to bottom,
             // stops at the first match. Always put specific rules first.
@@ -122,6 +128,7 @@ public class SecurityConfig {
 
                 // Passenger-only endpoints
                 .requestMatchers("/api/passager/**").hasRole("PASSAGER")
+                
 
                 // Everything else requires any authenticated user
                 .anyRequest().authenticated()

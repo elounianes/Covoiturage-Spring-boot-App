@@ -99,6 +99,60 @@
     <div id="reservations-grid" class="grid-auto">
       <!-- Populated by renderReservations() -->
     </div>
+    <!-- Payment methods section -->
+<div class="section mt-lg" id="payment-section">
+  <div class="section-title">Moyens de paiement</div>
+  <div id="payment-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+  <button class="btn btn-secondary mt-md" onclick="openPaymentModal()">
+    + Ajouter un moyen de paiement
+  </button>
+</div>
+
+<!-- Add payment method modal -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Ajouter une carte</h3>
+      <button class="modal-close" onclick="closePaymentModal()">✕</button>
+    </div>
+    <form onsubmit="addPaymentMethod(event)">
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="form-group">
+          <label class="form-label">Titulaire</label>
+          <input class="form-input" type="text" id="p-titulaire"
+                 placeholder="Nom sur la carte" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">4 derniers chiffres</label>
+          <input class="form-input" type="text" id="p-digits"
+                 placeholder="4242" maxlength="4" minlength="4"
+                 pattern="[0-9]{4}" required>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Expiration</label>
+            <input class="form-input" type="text" id="p-expiry"
+                   placeholder="MM/YY" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <div class="select-wrapper">
+              <select class="form-input" id="p-type">
+                <option value="CARTE">Carte bancaire</option>
+                <option value="PAYPAL">PayPal</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="payment-msg" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary btn-full"
+                id="payment-submit-btn">
+          Ajouter
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
     <!-- Quick link to browse -->
     <div style="text-align:center; margin-top: 40px;">
@@ -115,7 +169,88 @@
 <script>
   let allReservations = [];
   let currentTab = 'active';
+// Load and display payment methods
+async function loadPaymentMethods() {
+  const result = await Paiement.list();
+  const list = document.getElementById('payment-list');
+  const methods = Array.isArray(result.data) ? result.data : [];
 
+  if (methods.length === 0) {
+    list.innerHTML = `<p style="font-size:0.875rem; color:var(--text-muted);">
+      Aucun moyen de paiement enregistré.</p>`;
+    return;
+  }
+
+  list.innerHTML = methods.map(mp => `
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                background:var(--bg-card); border:1px solid var(--border);
+                border-radius:var(--radius); padding:14px 16px;">
+      <div>
+        <div style="font-weight:500; font-size:0.9rem;">${mp.numeroMasque}</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">
+          ${mp.titulaire} — expire ${mp.dateExpiration}
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge badge-muted">${mp.type}</span>
+        <button class="btn btn-danger btn-sm"
+                onclick="deletePaymentMethod('${mp.id}')">
+          Supprimer
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function addPaymentMethod(e) {
+  e.preventDefault();
+  const btn = document.getElementById('payment-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  const result = await Paiement.ajouter({
+    type:               document.getElementById('p-type').value,
+    derniers4Chiffres:  document.getElementById('p-digits').value,
+    dateExpiration:     document.getElementById('p-expiry').value,
+    titulaire:          document.getElementById('p-titulaire').value
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = 'Ajouter';
+
+  if (result.success) {
+    toast('Carte ajoutée avec succès !', 'success');
+    closePaymentModal();
+    e.target.reset();
+    await loadPaymentMethods();
+  } else {
+    const msg = document.getElementById('payment-msg');
+    msg.style.display = 'flex';
+    msg.className = 'alert alert-error';
+    msg.textContent = result.error;
+  }
+}
+
+async function deletePaymentMethod(id) {
+  if (!confirm('Supprimer ce moyen de paiement ?')) return;
+  const result = await Paiement.supprimer(id);
+  if (result.success) {
+    toast('Carte supprimée', 'success');
+    await loadPaymentMethods();
+  } else {
+    toast(result.error, 'error');
+  }
+}
+
+function openPaymentModal() {
+  document.getElementById('payment-modal').classList.add('open');
+}
+function closePaymentModal() {
+  document.getElementById('payment-modal').classList.remove('open');
+}
+document.getElementById('payment-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePaymentModal();
+});
   // ── Init ──────────────────────────────────────────────
   (async () => {
     // requireRole ensures only PASSAGER can access this page.
@@ -125,6 +260,7 @@
 
     renderNavbar(user, 'dashboard');
     await loadReservations();
+    await loadPaymentMethods(); 
   })();
 
   // ── Load reservations from API ─────────────────────────

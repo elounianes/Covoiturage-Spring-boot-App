@@ -67,6 +67,7 @@
     allNotifs = Array.isArray(result.data) ? result.data : [];
     updateUnreadCount();
     renderNotifs();
+    checkForEvaluationNotifs();
   }
 
   function updateUnreadCount() {
@@ -142,6 +143,107 @@
     toast(`${unread.length} notification(s) marquée(s) comme lue(s)`, 'success');
     await loadNotifs();
   }
+  let selectedRating = 0;
+let pendingChauffeurId = null;
+
+// After loading notifications, check if any require an evaluation
+function checkForEvaluationNotifs() {
+    const evalNotif = allNotifs.find(n =>
+        !n.lu && n.message?.startsWith('EVAL|')
+    );
+
+    if (evalNotif) {
+        const parts = evalNotif.message.split('|');
+        // parts[0] = "EVAL"
+        // parts[1] = chauffeurId  ← this is what we send to the API
+        // parts[2] = origine
+        // parts[3] = destination
+
+        pendingChauffeurId = parts[1];  // must be [1] not [0]
+
+        const origine     = parts[2] || '';
+        const destination = parts[3] || '';
+
+        document.querySelector('#rating-modal p').textContent =
+            `Comment s'est passé votre trajet ${origine} → ${destination} ?`;
+
+        openRatingModal();
+    }
+}
+function openRatingModal() {
+  document.getElementById('rating-modal').classList.add('open');
+}
+
+function closeRatingModal() {
+  document.getElementById('rating-modal').classList.remove('open');
+  selectedRating = 0;
+  renderStars();
+}
+
+// Update the visual star display
+function setRating(n) {
+  selectedRating = n;
+  renderStars();
+  document.getElementById('submit-rating-btn').disabled = false;
+}
+
+function renderStars() {
+  const stars = document.querySelectorAll('#stars span');
+  stars.forEach((s, i) => {
+    s.textContent = i < selectedRating ? '★' : '☆';
+    s.style.color  = i < selectedRating ? 'var(--amber)' : 'var(--text-faint)';
+  });
+}
+
+async function submitRating() {
+  if (!selectedRating || !pendingChauffeurId) return;
+
+  const btn = document.getElementById('submit-rating-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  const result = await Evaluations.evaluerChauffeur(
+    pendingChauffeurId, selectedRating);
+
+  if (result.success) {
+    toast('Merci pour votre évaluation ! ⭐', 'success');
+    closeRatingModal();
+    await loadNotifs(); // refresh so the notification shows as read
+  } else {
+    toast(result.error, 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'Envoyer';
+  }
+}
 </script>
+<!-- Rating modal — appears when passenger gets an evaluation notification -->
+<div class="modal-overlay" id="rating-modal">
+  <div class="modal" style="max-width: 400px; text-align: center;">
+    <h3 style="margin-bottom: 8px;">Évaluez votre chauffeur</h3>
+    <p style="margin-bottom: 24px; font-size: 0.875rem;">
+      Comment s'est passé votre trajet ?
+    </p>
+
+    <!-- Star selector — clicking a star sets the rating -->
+    <div id="stars" style="display:flex; justify-content:center; gap:8px;
+                            font-size: 2.4rem; margin-bottom: 24px; cursor:pointer;">
+      <span onclick="setRating(1)">☆</span>
+      <span onclick="setRating(2)">☆</span>
+      <span onclick="setRating(3)">☆</span>
+      <span onclick="setRating(4)">☆</span>
+      <span onclick="setRating(5)">☆</span>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button class="btn btn-primary" id="submit-rating-btn"
+              onclick="submitRating()" disabled>
+        Envoyer
+      </button>
+      <button class="btn btn-ghost" onclick="closeRatingModal()">
+        Plus tard
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

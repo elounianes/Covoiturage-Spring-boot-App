@@ -50,6 +50,7 @@ public class TrajetController {
         Trajet trajet = trajetService.getTrajet(id);
         return ResponseEntity.ok(ApiResponse.success(trajet));
     }
+    
     @PostMapping
     @PreAuthorize("hasRole('CHAUFFEUR')") // if not chauffeur return 403
         // @AuthenticationPrincipal gives the logged-in user's details
@@ -64,8 +65,6 @@ public class TrajetController {
             .orElseThrow(() ->
                 new ResourceNotFoundException("Vehicule",
                     request.getVehiculeId()));
-
-        // to fix !!!! a vehicule owner can not acces to all exsited vehicule frontend  fix !!
 
         if (!vehicule.getProprietaire().getId().equals(chauffeur.getId())) {
             return ResponseEntity
@@ -99,10 +98,30 @@ public class TrajetController {
                 .body(ApiResponse.error(
                     "Vous ne pouvez pas annuler le trajet d'un autre chauffeur"));
         }
-
         trajetService.cloreTrajet(id);
         return ResponseEntity.ok(ApiResponse.success(
             "Trajet clôturé avec succès"));
     }
+    // In TrajetController.java — add this method
+// POST /api/trajets/{id}/terminer
+// Driver calls this when they have completed the trip
+@PostMapping("/{id}/terminer")
+@PreAuthorize("hasRole('CHAUFFEUR')")
+public ResponseEntity<ApiResponse<Void>> terminerTrajet(
+        @PathVariable String id,
+        @AuthenticationPrincipal UserDetails userDetails) {
+
+    Trajet trajet = trajetService.getTrajet(id);
+
+    // Only the trip's own driver can mark it as finished
+    if (!trajet.getChauffeur().getEmail().equals(userDetails.getUsername())) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.error("Ce trajet ne vous appartient pas"));
+    }
+
+    trajetService.terminerTrajet(id);
+    return ResponseEntity.ok(
+        ApiResponse.success("Trajet terminé — passagers notifiés"));
+}
     
 }

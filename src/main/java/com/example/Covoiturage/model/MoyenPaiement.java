@@ -31,16 +31,14 @@ public class MoyenPaiement {
     private Passager passager;
 
     public MoyenPaiement() {}
-
+//  always stimulated to work!!
     public boolean payer(double montant) {
-        // Simulation: always succeeds
-        System.out.println("[PAIEMENT] " + montant + "€ débité de " + numeroMasque);
+        System.out.println("[PAIEMENT] " + montant + "DT débité de " + numeroMasque);
         return true;
     }
-
+//  always stimulated to work!!
     public boolean rembourser(double montant) {
-        // Simulation: always succeeds
-        System.out.println("[REMBOURSEMENT] " + montant + "€ remboursé sur " + numeroMasque);
+        System.out.println("[REMBOURSEMENT] " + montant + "DT remboursé sur " + numeroMasque);
         return true;
     }
 

@@ -37,7 +37,7 @@ public class Trajet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chauffeur_id", nullable = false)
     @JsonBackReference
-    @JsonIgnoreProperties({
+     @JsonIgnoreProperties({
     "trajetsProposes",       
     "vehicules",             
     "historiqueReservations",
@@ -123,11 +123,11 @@ public class Trajet {
         return this.placesTotales - this.placesReservees;
     }
 
-    public boolean peutEtreAnnuleParChauffeur() {
+ /*public boolean peutEtreAnnuleParChauffeur() {
         return reservations.stream()
             .noneMatch(r -> r.getStatus() ==
                 com.example.Covoiturage.model.enums.ReservationStatus.CONFIRMEE);
-    }
+    }*/
 
     public List<Reservation> getReservations() {
         return Collections.unmodifiableList(new ArrayList<>(reservations));

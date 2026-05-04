@@ -3,7 +3,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.example.Covoiturage.model.Chauffeur;
 import com.example.Covoiturage.model.Reservation;
 import com.example.Covoiturage.model.Trajet;
@@ -46,31 +46,65 @@ public class TrajetServiceImpl implements TrajetService{
         
         return trajet;
     }
-    @Override
+@Override
+@Transactional
+public void terminerTrajet(String trajetId) {
+    Trajet trajet = trajetRepo.findById(trajetId)
+            .orElseThrow(() -> new IllegalArgumentException("Trajet non trouvé"));
+
+    if (trajet.getStatus() != TrajetStatus.EN_COURS
+            && trajet.getStatus() != TrajetStatus.PREVU) {
+        throw new IllegalStateException(
+            "Seul un trajet en cours ou prévu peut être terminé");
+    }
+
+    trajet.setStatus(TrajetStatus.TERMINE);
+    trajetRepo.save(trajet);
+
+    List<Reservation> confirmed = reservationRepo
+        .findByTrajetIdAndStatus(trajetId, ReservationStatus.CONFIRMEE);
+
+    for (Reservation r : confirmed) {
+    notificationService.notfierUser(
+    r.getPassager(),
+    "Évaluez votre chauffeur",
+    "EVAL|" + trajet.getChauffeur().getId()
+    + "|" + trajet.getOrigine()
+    + "|" + trajet.getDestination()
+);
+    }
+
+    notificationService.notfierUser(
+        trajet.getChauffeur(),
+        "Trajet terminé",
+        "Votre trajet " + trajet.getOrigine() + " → "
+            + trajet.getDestination() + " a été marqué comme terminé."
+    );
+}
+@Override
     public void cloreTrajet(String trajetId) {
         Trajet trajet = trajetRepo.findById(trajetId)
             .orElseThrow(() -> new IllegalArgumentException("Trajet non trouvé"));
         List<Reservation> reservations = reservationRepo.findByTrajetIdAndStatus(trajetId,ReservationStatus.CONFIRMEE);
-         boolean moins24h = LocalDateTime.now()
+        boolean moins24h = LocalDateTime.now()
             .isAfter(trajet.getHeureDepart().minusHours(24));
 
-        // Notify every affected passenger
         for (Reservation r : reservations) {
             trajet.retirerPassager(r);
             r.setStatus(ReservationStatus.ANNULEE);
             reservationRepo.save(r);
 
             if (moins24h) {
-                // Simulated: just notify, real payout handled by PaiementService
                 notificationService.notfierUser(r.getPassager(),"Trajet annulé par le chauffeur","Votre trajet a été annulé moins de 24h avant le départ. " + "Une pénalité de 20% vous sera remboursée en supplément.");
+                
             } else {
                 notificationService.notfierUser(r.getPassager(),"Trajet annulé","Le trajet " + trajet.getOrigine() + " → " +trajet.getDestination() + " a été annulé par le chauffeur.");
             }
         }
 
-        trajet.cloreTrajet();
+        trajet.setStatus(TrajetStatus.ANNULE);
         trajetRepo.save(trajet);
-    }
+    } 
     @Override
     public List<Trajet> getTrajets(String origine, String destination) {
         return trajetRepo.findByOrigineAndDestinationAndStatus(origine, destination, TrajetStatus.PREVU);

@@ -44,7 +44,7 @@ public class PaymentTransaction {
     // simulated operations 
     public boolean autoriser() {
         this.status = PaymentStatus.AUTORISE;
-        System.out.println("[TRANSACTION] Autorisation de " + montant + "€");
+        System.out.println("[TRANSACTION] Autorisation de " + montant + "DT");
         return true;
     }
 
@@ -52,13 +52,13 @@ public class PaymentTransaction {
         if (this.status != PaymentStatus.AUTORISE)
             throw new IllegalStateException("Transaction non autorisée");
         this.status = PaymentStatus.CAPTURE;
-        System.out.println("[TRANSACTION] Capture de " + montant + "€");
+        System.out.println("[TRANSACTION] Capture de " + montant + "DT");
         return true;
     }
 
     public boolean rembourser() {
         this.status = PaymentStatus.REMBOURSE;
-        System.out.println("[TRANSACTION] Remboursement de " + montant + "€");
+        System.out.println("[TRANSACTION] Remboursement de " + montant + "DT");
         return true;
     }
 

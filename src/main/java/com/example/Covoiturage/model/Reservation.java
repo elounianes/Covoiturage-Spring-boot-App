@@ -21,7 +21,6 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "reservations")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 
 public class Reservation {
 
@@ -32,8 +31,8 @@ public class Reservation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trajet_id", nullable = false)
     @JsonIgnoreProperties({
-    "reservations",          // breaks Reservation→Trajet→Reservation
-    "chauffeur",             // not needed when embedded in Reservation
+    "reservations",   
+    "chauffeur",           
     "hibernateLazyInitializer",
     "handler"
 })
@@ -72,13 +71,7 @@ public class Reservation {
         return LocalDateTime.now().isBefore(limite);
     }
 
-    public void confirmerReservation() {
-        this.status = ReservationStatus.CONFIRMEE;
-    }
 
-    public void annulerReservation() {
-        this.status = ReservationStatus.ANNULEE;
-    }
 
     public void rembourserReservation() {
         if (this.transaction != null) {

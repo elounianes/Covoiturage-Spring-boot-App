@@ -20,6 +20,7 @@ public class EvaluationServiceImpl implements EvaluationService{
     }
     @Override
     public void evaluerChauffeur(String chauffeurId, String passagerId, int note) {
+        
             Chauffeur chauffeur = chauffeurRepository.findById(chauffeurId)
             .orElseThrow(() -> new IllegalArgumentException("Chauffeur non trouvé"));
             Passager passager = passagerRepository.findById(passagerId)
@@ -32,7 +33,7 @@ public class EvaluationServiceImpl implements EvaluationService{
     public double consulterNotesChauffeur(String chauffeurId) {
         Chauffeur chauffeur = chauffeurRepository.findById(chauffeurId)
             .orElseThrow(() -> new IllegalArgumentException("Chauffeur non trouvé"));
-        return chauffeur.consulterNotesChauffeur();
+        return chauffeur.consulterNotes();
     }
     
     @Transactional

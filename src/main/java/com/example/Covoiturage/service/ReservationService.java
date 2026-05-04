@@ -11,4 +11,5 @@ public interface ReservationService {
     void annulerReservation(String reservationId, boolean isDriverCancel);
     List<Reservation> getReservationsByPassager(String passagerId);
     Reservation getReservationByreservationId(String reservationId);
+    void refuserReservation(String reservationId);
 }

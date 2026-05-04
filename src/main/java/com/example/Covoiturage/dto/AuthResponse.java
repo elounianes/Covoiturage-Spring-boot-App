@@ -15,7 +15,7 @@ public class AuthResponse {
     // This pattern prevents accidentally creating half-built responses.
     private AuthResponse() {}
 
-    // Factory method for success
+    
     public static AuthResponse success(String userId, String email,
                                         String role, String status) {
         AuthResponse r = new AuthResponse();
@@ -27,7 +27,6 @@ public class AuthResponse {
         return r;
     }
 
-    // Factory method for errors
     public static AuthResponse error(String message) {
         AuthResponse r = new AuthResponse();
         r.success = false;
