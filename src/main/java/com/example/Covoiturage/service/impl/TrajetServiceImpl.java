@@ -68,10 +68,11 @@ public void terminerTrajet(String trajetId) {
     notificationService.notfierUser(
     r.getPassager(),
     "Évaluez votre chauffeur",
-    "EVAL|" + trajet.getChauffeur().getId()
-    + "|" + trajet.getOrigine()
-    + "|" + trajet.getDestination()
+    "EVAL | " + trajet.getChauffeur().getId()
+    + " | " + trajet.getOrigine()
+    + " | " + trajet.getDestination()
 );
+    r.setStatus(ReservationStatus.TERMINEE);
     }
 
     notificationService.notfierUser(
@@ -80,6 +81,7 @@ public void terminerTrajet(String trajetId) {
         "Votre trajet " + trajet.getOrigine() + " → "
             + trajet.getDestination() + " a été marqué comme terminé."
     );
+
 }
 @Override
     public void cloreTrajet(String trajetId) {

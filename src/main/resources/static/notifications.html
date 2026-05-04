@@ -102,13 +102,28 @@
       return;
     }
 
-    list.innerHTML = filtered.map(n => `
+    list.innerHTML = filtered.map(n => {
+      const rawParts = (n.message || '').split('|');
+      const title = rawParts[0] || 'Notification';
+      let body = rawParts.slice(1).join('|').trim();
+      
+      // Fallback for notifications that might not have a | separator
+      if (rawParts.length === 1) {
+          body = title;
+      }
+      
+      let displayMsg = body;
+      if (displayMsg.startsWith('EVAL')) {
+        displayMsg = 'Veuillez évaluer votre chauffeur pour ce trajet.';
+      }
+
+      return `
       <div class="notif-item ${n.lu ? '' : 'unread'}" id="notif-${n.id}"
            onclick="markRead('${n.id}', ${n.lu})" style="cursor:pointer;">
         <div class="notif-dot ${n.lu ? 'read' : ''}"></div>
         <div class="notif-content">
-          <div class="notif-title">${n.message?.split('—')[0] || 'Notification'}</div>
-          <div class="notif-msg">${n.message || ''}</div>
+          <div class="notif-title">${title}</div>
+          <div class="notif-msg">${displayMsg}</div>
           <div class="notif-time">
             ${n.type === 'EMAIL' ? '📧' : '📱'} ${n.type}
             &nbsp;·&nbsp;
@@ -117,7 +132,8 @@
         </div>
         ${!n.lu ? `<span class="badge badge-amber" style="flex-shrink:0;">Nouveau</span>` : ''}
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   // Mark a single notification as read when clicked
@@ -148,12 +164,18 @@ let pendingChauffeurId = null;
 
 // After loading notifications, check if any require an evaluation
 function checkForEvaluationNotifs() {
-    const evalNotif = allNotifs.find(n =>
-        !n.lu && n.message?.startsWith('EVAL|')
-    );
+    const evalNotif = allNotifs.find(n => {
+        if (n.lu || !n.message) return false;
+        const rawParts = n.message.split('|');
+        const body = rawParts.slice(1).join('|').trim() || rawParts[0];
+        return body.startsWith('EVAL');
+    });
 
     if (evalNotif) {
-        const parts = evalNotif.message.split('|');
+        const rawParts = evalNotif.message.split('|');
+        const body = rawParts.slice(1).join('|').trim() || rawParts[0];
+        const parts = body.split('|').map(s => s.trim());
+        
         // parts[0] = "EVAL"
         // parts[1] = chauffeurId  ← this is what we send to the API
         // parts[2] = origine

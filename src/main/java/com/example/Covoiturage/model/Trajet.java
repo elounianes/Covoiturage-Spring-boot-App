@@ -36,8 +36,8 @@ public class Trajet {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chauffeur_id", nullable = false)
-    @JsonBackReference
      @JsonIgnoreProperties({
+    "trajets",
     "trajetsProposes",       
     "vehicules",             
     "historiqueReservations",
@@ -89,11 +89,13 @@ public class Trajet {
 
     public void ajouterPassager(Reservation res) {
         if (isComplet())
-            throw new IllegalStateException("Trajet complet");
+            throw new com.example.Covoiturage.exception.TrajetCompletException("Trajet complet");
         if (res.getNombrePlaces() > getPlacesDisponibles())
-            throw new IllegalStateException("Pas assez de places disponibles");
+            throw new IllegalArgumentException("Pas assez de places disponibles");
 
-        this.reservations.add(res);
+        if (!this.reservations.contains(res)) {
+            this.reservations.add(res);
+        }
         this.placesReservees += res.getNombrePlaces();
 
         if (this.placesReservees >= this.placesTotales) {

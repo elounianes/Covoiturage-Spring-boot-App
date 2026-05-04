@@ -65,9 +65,9 @@ public class GlobalExceptionHandler {
     }
 
     // 400 — generic bad input (wrong role, invalid seat count, etc.)
-    @ExceptionHandler(IllegalArgumentException.class)
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<Map<String, Object>> handleIllegal(
-            IllegalArgumentException ex) {
+            RuntimeException ex) {
         return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

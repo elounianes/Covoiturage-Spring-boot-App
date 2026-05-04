@@ -80,15 +80,6 @@ public class ReservationServiceImpl implements ReservationService{
     System.out.println("[PAIEMENT] Carte utilisée : "
     + moyenUtilise.getNumeroMasque()
     + " pour " + reservation.getPrixTotal() + "DT");
-
-PaymentTransaction transaction = new PaymentTransaction(
-    reservation.getPrixTotal());
-transaction.autoriser();
-transaction.capturer();
-paymentTransactionRepository.save(transaction);
-
-reservation.setTransaction(transaction);
-        
         
         reservation.getTrajet().ajouterPassager(reservation);
         reservationRepository.save(reservation);
@@ -134,6 +125,7 @@ reservation.setTransaction(transaction);
                     
                     
                 }
+                notificationService.notfierUser(reservation.getTrajet().getChauffeur(),"Annulation de reservation","Une reservation a été annulée moins de 24h avant le départ. " + "Une pénalité de 50% vous sera déduite.");
 
             }
             reservation.setStatus(ReservationStatus.ANNULEE);

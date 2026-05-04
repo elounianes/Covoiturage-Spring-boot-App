@@ -49,7 +49,6 @@ public class PaiementServiceImpl implements PaiementService {
         if (!transaction.capturer()) {
             throw new PaiementEchouéException("Capture échouée");
         }
-        transaction.capturer();
         reservationRepository.save(reservation);
     }
     @Override
