@@ -51,11 +51,11 @@ public class DataInitializer implements CommandLineRunner {
 
         // ── Create users ──────────────────────────────────
         authService.creerCompte(
-            "alice@test.com", "0611111111", "password123", UserRole.PASSAGER);
+            "Alice","MacArthur","alice@test.com", "0611111111", "password123", UserRole.PASSAGER);
         authService.creerCompte(
-            "bob@test.com", "0622222222", "password123", UserRole.CHAUFFEUR);
+            "Bob","Johnson","bob@test.com", "0622222222", "password123", UserRole.CHAUFFEUR);
         authService.creerCompte(
-            "admin@test.com", "0633333333", "password123", UserRole.ADMIN);
+            "admin","admin","admin@test.com", "0633333333", "password123", UserRole.ADMIN);
 
         // ── Add vehicle to driver ─────────────────────────
         Chauffeur bob = chauffeurRepo.findByEmail("bob@test.com").get();

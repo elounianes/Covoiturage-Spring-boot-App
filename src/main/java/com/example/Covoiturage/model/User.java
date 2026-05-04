@@ -33,6 +33,12 @@ public abstract class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false)
+    private String nom;
+
+    @Column(nullable = false)
+    private String prenom;
+
     private String phone;
 
     @JsonIgnore 
@@ -46,7 +52,9 @@ public abstract class User {
 
     protected User() {}
 
-    protected User(String email, String phone, String passwordHash) {
+    protected User(String nom, String prenom, String email, String phone, String passwordHash) {
+        this.nom = nom;
+        this.prenom = prenom;
         this.email = email;
         this.phone = phone;
         this.passwordHash = passwordHash;
@@ -83,6 +91,12 @@ public abstract class User {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom; }
+
+    public String getPrenom() { return prenom; }
+    public void setPrenom(String prenom) { this.prenom = prenom; }
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }

@@ -23,7 +23,7 @@ public class AuthServiceImpl implements AuthService{
         this.passwordEncoder = passwordEncoder;
     }
     @Override
-    public User creerCompte(String email,String phone, String mdp,UserRole role) {
+    public User creerCompte(String nom, String prenom, String email,String phone, String mdp,UserRole role) {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email Deja existant: "+ email);
         }
@@ -31,9 +31,9 @@ public class AuthServiceImpl implements AuthService{
 
 
         User user = switch(role){
-            case PASSAGER -> new Passager(email, phone, hash);
-            case CHAUFFEUR -> new Chauffeur(email, phone, hash);
-            case ADMIN -> new Admin(email, phone, hash);
+            case PASSAGER -> new Passager(nom, prenom, email, phone, hash);
+            case CHAUFFEUR -> new Chauffeur(nom, prenom, email, phone, hash);
+            case ADMIN -> new Admin(nom, prenom, email, phone, hash);
         };
         userRepository.save(user);
         notificationService.notfierUser(user,"Bienvenue sur CovoitApp","Votre compte a été créé avec succès.");

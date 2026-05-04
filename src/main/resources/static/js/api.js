@@ -65,8 +65,8 @@ const del    = (path)         => apiCall('DELETE', path);
 const Auth = {
   // Register a new account.
   // role must be 'PASSAGER', 'CHAUFFEUR', or 'ADMIN'
-  register: (email, phone, password, role) =>
-    post('/api/auth/register', { email, phone, password, role }),
+  register: (nom, prenom, email, phone, password, role) =>
+    post('/api/auth/register', { nom, prenom, email, phone, password, role }),
 
   // Login uses form-data NOT JSON because Spring Security's
   // UsernamePasswordAuthenticationFilter expects form params.
@@ -190,4 +190,6 @@ const Admin = {
   reservations:   () => get('/api/admin/reservations'),
   suspendre:      (id) => put(`/api/admin/users/${id}/suspendre`),
   bloquer:        (id) => put(`/api/admin/users/${id}/bloquer`),
+  creerAdmin:     (nom, prenom, email, phone, password) => 
+    post('/api/admin/create-admin', { nom, prenom, email, phone, password, role: 'ADMIN' }),
 };

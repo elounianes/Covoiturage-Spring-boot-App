@@ -25,8 +25,8 @@ public class Passager extends User {
 
     public Passager() {}
 
-    public Passager(String email, String phone, String passwordHash) {
-        super(email, phone, passwordHash);
+    public Passager(String nom, String prenom, String email, String phone, String passwordHash) {
+        super(nom, prenom, email, phone, passwordHash);
     }
 
     public List<MoyenPaiement> getMoyenPaiement() {

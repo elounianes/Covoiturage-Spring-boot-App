@@ -4,7 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.example.Covoiturage.dto.*;
 import com.example.Covoiturage.exception.ResourceNotFoundException;
-
+import jakarta.validation.Valid;
 import java.util.List;
 import com.example.Covoiturage.model.*;
 import com.example.Covoiturage.repository.ReservationRepository;
@@ -63,6 +63,13 @@ public class AdminController {
         authService.bloquerCompte(id);
         return ResponseEntity.ok(ApiResponse.success(
             "Utilisateur bloqué avec succès"));
+    }
+
+    @PostMapping("/create-admin")
+    public ResponseEntity<ApiResponse<User>> createAdmin(@Valid @RequestBody RegisterRequest request) {
+        request.setRole(com.example.Covoiturage.model.enums.UserRole.ADMIN);
+        User user = authService.creerCompte(request.getNom(), request.getPrenom(), request.getEmail(), request.getPhone(), request.getPassword(), request.getRole());
+        return ResponseEntity.ok(ApiResponse.success(user));
     }
       @GetMapping("/trajets")
     public ResponseEntity<ApiResponse<List<Trajet>>> getAllTrajets() {

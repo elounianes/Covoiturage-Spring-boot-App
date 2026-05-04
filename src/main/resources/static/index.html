@@ -259,6 +259,19 @@
 
       <!-- ── Register Form ── -->
       <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+        <div style="display: flex; gap: 16px;">
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Nom</label>
+            <input class="form-input" type="text" id="reg-nom"
+                   placeholder="Votre nom" required>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Prénom</label>
+            <input class="form-input" type="text" id="reg-prenom"
+                   placeholder="Votre prénom" required>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Adresse email</label>
           <input class="form-input" type="email" id="reg-email"
@@ -280,7 +293,7 @@
         <div class="form-group">
           <label class="form-label">Je suis un(e)</label>
           <!-- Custom radio buttons styled as cards -->
-          <div class="role-selector">
+          <div class="role-selector" style="grid-template-columns: repeat(2, 1fr);">
             <input class="role-option" type="radio" name="role"
                    id="role-passager" value="PASSAGER" checked>
             <label class="role-label" for="role-passager">
@@ -293,13 +306,6 @@
             <label class="role-label" for="role-chauffeur">
               <span class="role-icon">🚗</span>
               Chauffeur
-            </label>
-
-            <input class="role-option" type="radio" name="role"
-                   id="role-admin" value="ADMIN">
-            <label class="role-label" for="role-admin">
-              <span class="role-icon">🛡️</span>
-              Admin
             </label>
           </div>
         </div>
@@ -393,12 +399,14 @@
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div> Création...';
 
+    const nom      = document.getElementById('reg-nom').value;
+    const prenom   = document.getElementById('reg-prenom').value;
     const email    = document.getElementById('reg-email').value;
     const phone    = document.getElementById('reg-phone').value;
     const password = document.getElementById('reg-password').value;
     const role     = document.querySelector('input[name="role"]:checked').value;
 
-    const result = await Auth.register(email, phone, password, role);
+    const result = await Auth.register(nom, prenom, email, phone, password, role);
 
     if (result.success) {
       showMessage('Compte créé ! Vous pouvez maintenant vous connecter.', 'success');

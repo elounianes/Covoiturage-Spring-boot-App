@@ -5,7 +5,7 @@ import com.example.Covoiturage.model.*;
 import com.example.Covoiturage.service.*;
 
 import jakarta.validation.Valid;
-
+import com.example.Covoiturage.model.enums.UserRole;
 import com.example.Covoiturage.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +26,10 @@ public class AuthController {
   
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request){
-        User user = authService.creerCompte(request.getEmail(),request.getPhone(),request.getPassword(),request.getRole());  
+        if (request.getRole() == UserRole.ADMIN) {
+            throw new IllegalArgumentException("Vous ne pouvez pas créer un compte Admin ici.");
+        }
+        User user = authService.creerCompte(request.getNom(), request.getPrenom(), request.getEmail(),request.getPhone(),request.getPassword(),request.getRole());  
         return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.success(user.getId(),user.getEmail(),user.getRole().name(),user.getStatus().name()));
     }
     @GetMapping("/me")

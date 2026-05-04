@@ -35,8 +35,8 @@ public class Chauffeur extends User {
 
     public Chauffeur() {}
 
-    public Chauffeur(String email, String phone, String passwordHash) {
-        super(email, phone, passwordHash);
+    public Chauffeur(String nom, String prenom, String email, String phone, String passwordHash) {
+        super(nom, prenom, email, phone, passwordHash);
     }
 
     public List<Vehicule> getVehicules() {
