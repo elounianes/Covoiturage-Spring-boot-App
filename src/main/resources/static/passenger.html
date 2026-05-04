@@ -303,7 +303,7 @@ document.getElementById('payment-modal').addEventListener('click', function(e) {
       <div class="stat-card">
         <div class="stat-icon">💶</div>
         <div class="stat-label">Total dépensé</div>
-        <div class="stat-value">${spent.toFixed(0)} €</div>
+        <div class="stat-value">${spent.toFixed(0)} DT</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">❌</div>
@@ -372,7 +372,7 @@ document.getElementById('payment-modal').addEventListener('click', function(e) {
         ` : ''}
 
         <div class="res-footer">
-          <div class="res-price">${r.prixTotal?.toFixed(2)} €</div>
+          <div class="res-price">${r.prixTotal?.toFixed(2)} DT</div>
 
           <!-- Only show cancel button for active reservations -->
           ${['CONFIRMEE','EN_ATTENTE'].includes(r.status) ? `

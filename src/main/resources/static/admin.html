@@ -86,7 +86,7 @@
       <div class="stat-card">
         <div class="stat-icon">💶</div>
         <div class="stat-label">Volume transactions</div>
-        <div class="stat-value">${revenue.toFixed(0)} €</div>
+        <div class="stat-value">${revenue.toFixed(0)} DT</div>
       </div>
     `;
   }
@@ -196,7 +196,7 @@
                   ${formatDateShort(t.heureDepart)}
                 </td>
                 <td>${t.placesReservees}/${t.placesTotales}</td>
-                <td style="color:var(--amber); font-weight:600">${t.prixParPlace}€</td>
+                <td style="color:var(--amber); font-weight:600">${t.prixParPlace}DT</td>
                 <td>${statusBadge(t.status)}</td>
               </tr>
             `).join('')}
@@ -233,7 +233,7 @@
                 </td>
                 <td>${r.nombrePlaces}</td>
                 <td style="color:var(--amber); font-weight:600">
-                  ${r.prixTotal?.toFixed(2)} €
+                  ${r.prixTotal?.toFixed(2)} DT
                 </td>
                 <td>${r.transaction ? statusBadge(r.transaction.status) : '<span class="badge badge-muted">—</span>'}</td>
                 <td>${statusBadge(r.status)}</td>

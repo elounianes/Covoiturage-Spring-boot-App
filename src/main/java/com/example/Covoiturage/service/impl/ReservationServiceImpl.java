@@ -91,6 +91,8 @@ public class ReservationServiceImpl implements ReservationService{
         reservation.getTrajet().getDestination() +
         " a été confirmée par le chauffeur. Paiement de " +
         reservation.getPrixTotal() + "DT effectué.");
+
+    
     }
     @Override
     public void annulerReservation(String reservationId,boolean isDriverCancel) {
