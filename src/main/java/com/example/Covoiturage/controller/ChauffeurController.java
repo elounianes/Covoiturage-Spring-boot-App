@@ -77,6 +77,24 @@ public class ChauffeurController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(vehicule));
     }
+    @DeleteMapping("/vehicules/{id}")
+    @PreAuthorize("hasRole('CHAUFFEUR')")
+    public ResponseEntity<ApiResponse<Void>> supprimerVehicule(@PathVariable String id, @AuthenticationPrincipal UserDetails userDetails)
+    {
+
+        Chauffeur chauffeur = getChauffeurFromSession(userDetails);
+        Vehicule vehicule = vehiculeRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Vehicule", id));
+
+        if(!vehicule.getProprietaire().getId().equals(chauffeur.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Vous n'êtes pas propriétaire de ce véhicule"));
+        }
+        vehiculeRepo.delete(vehicule);
+        trajetRepo.deleteByVehiculeId(id);
+        reservationRepo.deleteByTrajetId(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
 
     @GetMapping("/trajets")
     public ResponseEntity<ApiResponse<List<Trajet>>> mesTrajets(

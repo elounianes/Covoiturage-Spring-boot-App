@@ -149,4 +149,25 @@ public class ReservationController {
         return ResponseEntity.ok(
             ApiResponse.success("Réservation refusée — passager notifié"));
     }
+
+ 
+    @DeleteMapping("/{id}/chauffeur")
+    @PreAuthorize("hasRole('CHAUFFEUR')")
+    public ResponseEntity<ApiResponse<Void>> annulerReservationParChauffeur(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Reservation reservation = reservationService.getReservationByreservationId(id);
+
+        if (!reservation.getTrajet().getChauffeur().getEmail()
+                .equals(userDetails.getUsername())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(
+                    "Vous ne pouvez annuler que les réservations de vos propres trajets"));
+        }
+
+        reservationService.annulerReservation(id, true);
+        return ResponseEntity.ok(ApiResponse.success(
+            "Réservation annulée — passager remboursé"));
+    }
 }

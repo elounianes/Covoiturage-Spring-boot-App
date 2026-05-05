@@ -15,4 +15,7 @@ public interface TrajetRepository extends JpaRepository<Trajet, String> {
     List<Trajet> findByChauffeurId(String chauffeurId);
 
     List<Trajet> findByStatus(TrajetStatus status);
+
+    void deleteByVehiculeId(String vehiculeId);
+
 }

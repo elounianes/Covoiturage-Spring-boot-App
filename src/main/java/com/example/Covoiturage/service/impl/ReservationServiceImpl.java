@@ -67,6 +67,13 @@ public class ReservationServiceImpl implements ReservationService{
     public void confirmerReservation(String reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
             .orElseThrow(() -> new IllegalArgumentException("Reservation non trouvée"));
+
+        if (reservation.getTrajet().getStatus() ==
+                com.example.Covoiturage.model.enums.TrajetStatus.ANNULE) {
+            throw new IllegalStateException(
+                "Impossible de confirmer une réservation sur un trajet annulé");
+        }
+
         reservation.setStatus(ReservationStatus.CONFIRMEE);
         
         paiementService.payer(reservation);
@@ -100,6 +107,11 @@ public class ReservationServiceImpl implements ReservationService{
             .orElseThrow(() -> new IllegalArgumentException("Reservation non trouvée"));
             if(reservation.getStatus() == ReservationStatus.ANNULEE){
                 throw new IllegalArgumentException("Reservation déjà annulée");
+            }
+            if (reservation.getTrajet().getStatus() ==
+                    com.example.Covoiturage.model.enums.TrajetStatus.ANNULE) {
+                throw new IllegalStateException(
+                    "Ce trajet est déjà annulé — aucune action sur ses réservations n'est possible");
             }
             boolean avantDelai = reservation.isPlusDe24hAvantDepart();
             double prixTotal   = reservation.getPrixTotal();

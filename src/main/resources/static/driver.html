@@ -310,11 +310,12 @@
             </div>
             ${statusBadge(t.status)}
             <div class="trip-row-actions">
+              ${t.status !== 'ANNULE' ? `
               <button class="btn btn-secondary btn-sm"
-                      onclick="viewReservations('${t.id}', '${t.origine} → ${t.destination}')">
+                      onclick="viewReservations('${t.id}', '${t.origine} → ${t.destination}', '${t.status}')">
                 Réservations
-              </button>
-           ${t.status === 'PREVU' || t.status === 'EN_COURS' ? `
+              </button>` : ''}
+           ${t.status === 'PREVU' || t.status === 'EN_COURS' || t.status === 'COMPLET' ? `
   <button class="btn btn-success btn-sm"
           onclick="terminerTrajet('${t.id}')">
     ✓ Terminer
@@ -357,8 +358,16 @@
     content.innerHTML = header + `
       <div class="grid-auto">
         ${vehicules.map(v => `
-          <div class="card">
-            <h4 style="margin-bottom:12px;">${v.marque} ${v.modele}</h4>
+          <div class="card" style="position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+              <h4>${v.marque} ${v.modele}</h4>
+              <button class="btn btn-danger btn-sm"
+                      style="padding:4px 10px;"
+                      onclick="supprimerVehicule('${v.id}')"
+                      title="Supprimer ce véhicule">
+                🗑
+              </button>
+            </div>
             <div class="detail-row">
               <span class="detail-label">Plaque</span>
               <span class="detail-value">${v.plaqueImmatriculation}</span>
@@ -384,7 +393,10 @@
       const result = await Trajets.reservationsDuTrajet(t.id);
       if (result.success) {
         const list = Array.isArray(result.data) ? result.data : [];
-        list.forEach(r => r._trajetLabel = `${t.origine} → ${t.destination}`);
+        list.forEach(r => {
+          r._trajetLabel  = `${t.origine} → ${t.destination}`;
+          r._trajetStatus = t.status;   // needed to suppress buttons on cancelled trips
+        });
         allRes.push(...list);
       }
     }
@@ -417,10 +429,20 @@
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               ${statusBadge(r.status)}
-              ${r.status === 'EN_ATTENTE' || r.status === 'CONFIRMEE' ? `
+              ${(r._trajetStatus === 'ANNULE' || r._trajetStatus === 'TERMINE') ? '' :
+                r.status === 'EN_ATTENTE' ? `
                 <button class="btn btn-success btn-sm"
                         onclick="confirmReservation('${r.id}')">
-                  Confirmer
+                  ✓ Confirmer
+                </button>
+                <button class="btn btn-danger btn-sm"
+                        onclick="annulerReservationChauffeur('${r.id}')">
+                  ✕ Refuser
+                </button>
+              ` : r.status === 'CONFIRMEE' ? `
+                <button class="btn btn-danger btn-sm"
+                        onclick="annulerReservationChauffeur('${r.id}')">
+                  Annuler
                 </button>
               ` : ''}
             </div>
@@ -431,11 +453,14 @@
   }
 
   // ── View reservations for a specific trip ──────────────
-  async function viewReservations(trajetId, label) {
+  // trajetStatus is passed so we can suppress action buttons on ANNULE/TERMINE trips
+  async function viewReservations(trajetId, label, trajetStatus) {
     document.getElementById('res-modal-title').textContent = `Réservations — ${label}`;
     document.getElementById('res-modal-list').innerHTML =
       '<div class="loading-overlay"><div class="spinner"></div></div>';
     openModal('res-modal');
+
+    const isActive = trajetStatus !== 'ANNULE' && trajetStatus !== 'TERMINE';
 
     const result = await Trajets.reservationsDuTrajet(trajetId);
     const list   = Array.isArray(result.data) ? result.data : [];
@@ -460,7 +485,8 @@
         </div>
         <div style="display:flex; align-items:center; gap: 8px;">
           ${statusBadge(r.status)}
-         ${r.status === 'EN_ATTENTE' ? `
+          ${!isActive ? '' :
+            r.status === 'EN_ATTENTE' ? `
   <div style="display:flex; gap:6px;">
     <button class="btn btn-success btn-sm"
             onclick="confirmReservation('${r.id}')">
@@ -471,6 +497,11 @@
       ✕ Refuser
     </button>
   </div>
+` : r.status === 'CONFIRMEE' ? `
+  <button class="btn btn-danger btn-sm"
+          onclick="annulerReservationChauffeur('${r.id}')">
+    Annuler
+  </button>
 ` : ''}
         </div>
       </div>
@@ -545,6 +576,20 @@ async function refuserReservation(resId) {
         toast(result.error, 'error');
     }
 }
+
+  // ── Cancel a confirmed reservation (driver side) ────────
+  async function annulerReservationChauffeur(resId) {
+    if (!confirm('Annuler cette réservation confirmée ? Le passager sera remboursé.')) return;
+    const result = await Reservations.annulerParChauffeur(resId);
+    if (result.success) {
+      toast('Réservation annulée — passager remboursé', 'info');
+      closeModal('res-modal');
+      await loadTrajets();
+      await renderAllReservationsTab();
+    } else {
+      toast(result.error, 'error');
+    }
+}
   // ── Add a vehicle ──────────────────────────────────────
   async function addVehicule(e) {
     e.preventDefault();
@@ -573,6 +618,19 @@ async function refuserReservation(resId) {
       msg.style.display = 'flex';
       msg.className = 'alert alert-error';
       msg.textContent = result.error;
+    }
+  }
+
+  // ── Delete a vehicle ───────────────────────────────────
+  async function supprimerVehicule(id) {
+    if (!confirm('Supprimer ce véhicule ? Cette action est irréversible.')) return;
+    const result = await Chauffeur.supprimerVehicule(id);
+    if (result.success) {
+      toast('Véhicule supprimé', 'success');
+      await loadVehicules();
+      await loadStats();
+    } else {
+      toast(result.error || 'Impossible de supprimer ce véhicule', 'error');
     }
   }
 

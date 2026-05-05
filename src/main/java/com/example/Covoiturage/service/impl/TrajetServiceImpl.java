@@ -53,9 +53,10 @@ public void terminerTrajet(String trajetId) {
             .orElseThrow(() -> new IllegalArgumentException("Trajet non trouvé"));
 
     if (trajet.getStatus() != TrajetStatus.EN_COURS
-            && trajet.getStatus() != TrajetStatus.PREVU) {
+            && trajet.getStatus() != TrajetStatus.PREVU
+            && trajet.getStatus() != TrajetStatus.COMPLET) {
         throw new IllegalStateException(
-            "Seul un trajet en cours ou prévu peut être terminé");
+            "Seul un trajet prévu, en cours ou complet peut être terminé");
     }
 
     trajet.setStatus(TrajetStatus.TERMINE);

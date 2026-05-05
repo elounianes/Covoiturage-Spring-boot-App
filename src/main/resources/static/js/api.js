@@ -140,6 +140,9 @@ const Reservations = {
 
   // Driver: confirm a booking (triggers payment capture)
   confirmer: (id) => post(`/api/reservations/${id}/confirmer`),
+
+  // Driver: cancel a confirmed reservation (triggers refund)
+  annulerParChauffeur: (id) => del(`/api/reservations/${id}/chauffeur`),
 };
 
 // ── Chauffeur endpoints ───────────────────────────────────
@@ -149,6 +152,9 @@ const Chauffeur = {
 
   // Add a new vehicle
   ajouterVehicule: (data) => post('/api/chauffeur/vehicules', data),
+
+  // Delete a vehicle
+  supprimerVehicule: (id) => del(`/api/chauffeur/vehicules/${id}`),
 
   // Get the driver's average rating
   notes: () => get('/api/chauffeur/notes'),
