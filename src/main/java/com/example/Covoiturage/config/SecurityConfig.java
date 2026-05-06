@@ -1,3 +1,6 @@
+// NOTE THIS FILE IS AI GENERATED 
+
+
 package com.example.Covoiturage.config;
 
 import java.util.HashMap;
@@ -22,32 +25,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-@Configuration
-@EnableWebSecurity
-// @EnableMethodSecurity lets you use @PreAuthorize("hasRole('ADMIN')")
-// directly on service or controller methods — cleaner than hardcoding URLs
-@EnableMethodSecurity
+@Configuration // tells Spring Boot that this is a Configuration
+@EnableWebSecurity // enables web security and tells spring to handle the URL security and dont go with the default Spring Security
+@EnableMethodSecurity //lets you use @PreAuthorize("hasRole('ADMIN')")
 public class SecurityConfig {
-
-    // Spring will inject this — it is defined in UserDetailsServiceImpl
+    // to go back for
     private final UserDetailsServiceImpl userDetailsService;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
 
-    // ── PasswordEncoder ───────────────────────────────────
     // BCrypt is the industry standard for password hashing.
     // This bean is used in two places:
     //   1. AuthServiceImpl.creerCompte()  → encode the password before saving
     //   2. DaoAuthenticationProvider     → verify password on login
     // Declaring it as a @Bean means Spring injects it wherever needed.
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    @Bean // Spring handles the life Cycle of this methode and lets spring boot know to inject it wherever needed !! not handles manually like sevices and repositories 
+    public PasswordEncoder passwordEncoder() { // passwordEncoder is a bean that is used to encode and decode passwords
+        return new BCryptPasswordEncoder(); // used to hash passwords and verify passwords during login!!
+
     }
 
-    // ── AuthenticationProvider ────────────────────────────
     // DaoAuthenticationProvider is Spring's built-in connector between:
     //   - your UserDetailsService (loads the user from DB)
     //   - your PasswordEncoder   (verifies the password)
@@ -57,50 +56,49 @@ public class SecurityConfig {
  
   
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-    provider.setPasswordEncoder(passwordEncoder());
-    return provider;
+    public DaoAuthenticationProvider authenticationProvider() { //DaoAuthenticationProvider is a class that handles the authentication of users
+    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService); // create an authentication provider using the UserDetailsServiceImpl to load users from DB
+    provider.setPasswordEncoder(passwordEncoder()); // set the password encoder to the authentication provider to encode and decode passwords
+    return provider; // rturns the configured provider so Spring can use it for authentication
 }
 
   
 
 
 
-    // ── AuthenticationManager ─────────────────────────────
+    // ── AuthenticationManager 
     // Exposed as a @Bean so AuthController can inject it
     // and call authenticate() directly when processing login requests.
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager( //This is the main component responsible for authentication
+            AuthenticationConfiguration config) throws Exception { //  AuthenticationConfiguration is  a class that provides the configuration for the authentication manager
+        return config.getAuthenticationManager(); // AuthenticationManager getAuthenticationManager() method returns the authentication manager 
     }
 
-    // ── Main security filter chain ────────────────────────
-    
+    //security filter chain 
+    // how requests are secured and who can access what
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception { // HttpSecurity is a class that provides the configuration for the security filter chain 
 
         http
-            // ── CSRF ─────────────────────────────────────
+            
             // CSRF protection is designed for browser-based form submissions
-            // where a malicious site tricks the browser into sending a request.
-            // For REST APIs consumed by fetch() with JSON bodies, CSRF tokens
-            // are not the right protection mechanism — we disable it here.
-            // In production with real JWT tokens, you would handle this differently.
-            .csrf(AbstractHttpConfigurer::disable)
+            //CSRF protection ensures that state-changing requests (POST, PUT, DELETE) come from a trusted source
+            //  It usually works with a CSRF token sent in forms
+           
+            .csrf(AbstractHttpConfigurer::disable) //  building a REST API  use JSON requests (fetch / Postman), not browser forms
 
-            // ── Allow H2 console iframes ──────────────────
+            // Allow H2 console iframes 
             // H2 console uses iframes; Spring Security blocks them by default.
             .headers(headers -> headers
                 .frameOptions(frame -> frame.disable())
             )
 
-            // ── URL-based access rules ────────────────────
+            // ── URL-based access rules 
             // Order matters — Spring checks rules top to bottom,
             // stops at the first match. Always put specific rules first.
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
+                .requestMatchers( // public front files
                 "/",
                 "/index.html",
                 "/browse.html",
@@ -119,7 +117,7 @@ public class SecurityConfig {
                     "/api/trajets/disponibles", // browse page is public
                     "/h2-console/**"  // remove this in production
                 ).permitAll()
-
+                //Role-based access
                 // Admin-only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
@@ -138,6 +136,7 @@ public class SecurityConfig {
             // We override the default Spring login behavior completely.
             // Instead of redirecting to /login page (Thymeleaf behavior),
             // we return JSON — because fetch() cannot follow redirects usefully.
+            // how the login form works !! and handeled
             .formLogin(form -> form
                 .loginProcessingUrl("/api/auth/login")  // POST to this URL
                 .usernameParameter("email")             // match your login JSON field
@@ -150,11 +149,14 @@ public class SecurityConfig {
 
                     // Build a response body with the user's role so the
                     // frontend knows which dashboard to redirect to
+
+                    // here the use of the hashmap to build  json response
+                    //  json response will contain the user's email and role  !!
                     Map<String, Object> body = new HashMap<>();
                     body.put("success", true);
                     body.put("email", authentication.getName());
                     body.put("role", authentication.getAuthorities()
-                        .iterator().next().getAuthority()); //  ROLE_CHAUFFEUR
+                        .iterator().next().getAuthority()); // get the role of the user 
 
                     new ObjectMapper().writeValue(response.getWriter(), body);
                 })

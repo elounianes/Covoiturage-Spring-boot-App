@@ -1,3 +1,6 @@
+// NOTE THIS FILE IS AI GENERATED 
+// this file centralizes all error handling. 
+
 package com.example.Covoiturage.exception;
 
 import org.springframework.http.HttpStatus;
